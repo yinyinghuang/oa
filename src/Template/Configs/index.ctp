@@ -59,6 +59,13 @@
                         </div>
                     </div>
                     <div class="form-group">
+                        <label for="min-date" class="col-sm-4 control-label">类型</label>
+                        <div class="col-sm-7">
+                            <label for=""><input type="radio" name="type" value="0">法定节假</label>
+                            <label for=""><input type="radio" name="type" value="1">上班</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
                         <label for="min-date" class="col-sm-4 control-label">日期</label>
                         <div class="col-sm-7">
                             <div class="input-group input-daterange" data-provide="datepicker">
@@ -113,7 +120,7 @@
                     for(var i in e.events) {
                         content += '<div class="event-tooltip-content">'
                                         + '<div class="event-name" style="color:' + e.events[i].color + '">' + e.events[i].name + '</div>'
-                                        + '<div class="event-location">' + e.events[i].location + '</div>'
+                                        + '<div class="event-type">' + e.events[i].type + '</div>'
                                     + '</div>';
                     }
                 
@@ -139,70 +146,70 @@
                 {
                     id: 0,
                     name: 'Google I/O',
-                    location: 'San Francisco, CA',
+                    type: 'San Francisco, CA',
                     startDate: new Date(currentYear, 4, 28),
                     endDate: new Date(currentYear, 4, 29)
                 },
                 {
                     id: 1,
                     name: 'Microsoft Convergence',
-                    location: 'New Orleans, LA',
+                    type: 'New Orleans, LA',
                     startDate: new Date(currentYear, 2, 16),
                     endDate: new Date(currentYear, 2, 19)
                 },
                 {
                     id: 2,
                     name: 'Microsoft Build Developer Conference',
-                    location: 'San Francisco, CA',
+                    type: 'San Francisco, CA',
                     startDate: new Date(currentYear, 3, 29),
                     endDate: new Date(currentYear, 4, 1)
                 },
                 {
                     id: 3,
                     name: 'Apple Special Event',
-                    location: 'San Francisco, CA',
+                    type: 'San Francisco, CA',
                     startDate: new Date(currentYear, 8, 1),
                     endDate: new Date(currentYear, 8, 1)
                 },
                 {
                     id: 4,
                     name: 'Apple Keynote',
-                    location: 'San Francisco, CA',
+                    type: 'San Francisco, CA',
                     startDate: new Date(currentYear, 8, 9),
                     endDate: new Date(currentYear, 8, 9)
                 },
                 {
                     id: 5,
                     name: 'Chrome Developer Summit',
-                    location: 'Mountain View, CA',
+                    type: 'Mountain View, CA',
                     startDate: new Date(currentYear, 10, 17),
                     endDate: new Date(currentYear, 10, 18)
                 },
                 {
                     id: 6,
                     name: 'F8 2015',
-                    location: 'San Francisco, CA',
+                    type: 'San Francisco, CA',
                     startDate: new Date(currentYear, 2, 25),
                     endDate: new Date(currentYear, 2, 26)
                 },
                 {
                     id: 7,
                     name: 'Yahoo Mobile Developer Conference',
-                    location: 'New York',
+                    type: 'New York',
                     startDate: new Date(currentYear, 7, 25),
                     endDate: new Date(currentYear, 7, 26)
                 },
                 {
                     id: 8,
                     name: 'Android Developer Conference',
-                    location: 'Santa Clara, CA',
+                    type: 'Santa Clara, CA',
                     startDate: new Date(currentYear, 11, 1),
                     endDate: new Date(currentYear, 11, 4)
                 },
                 {
                     id: 9,
                     name: 'LA Tech Summit',
-                    location: 'Los Angeles, CA',
+                    type: 'Los Angeles, CA',
                     startDate: new Date(currentYear, 10, 17),
                     endDate: new Date(currentYear, 10, 17)
                 }
@@ -216,7 +223,7 @@
     function editEvent(event) {
         $('#event-modal input[name="event-index"]').val(event ? event.id : '');
         $('#event-modal input[name="event-name"]').val(event ? event.name : '');
-        $('#event-modal input[name="event-location"]').val(event ? event.location : '');
+        $('#event-modal input[name="event-type"]').val(event ? event.type : '');
         $('#event-modal input[name="event-start-date"]').datepicker('update', event ? event.startDate : '');
         $('#event-modal input[name="event-end-date"]').datepicker('update', event ? event.endDate : '');
         $('#event-modal').modal();
@@ -239,7 +246,7 @@
         var event = {
             id: $('#event-modal input[name="event-index"]').val(),
             name: $('#event-modal input[name="event-name"]').val(),
-            location: $('#event-modal input[name="event-location"]').val(),
+            type: $('#event-modal input[name="event-type"]').val(),
             startDate: $('#event-modal input[name="event-start-date"]').datepicker('getDate'),
             endDate: $('#event-modal input[name="event-end-date"]').datepicker('getDate')
         }
@@ -250,7 +257,7 @@
             for(var i in dataSource) {
                 if(dataSource[i].id == event.id) {
                     dataSource[i].name = event.name;
-                    dataSource[i].location = event.location;
+                    dataSource[i].type = event.type;
                     dataSource[i].startDate = event.startDate;
                     dataSource[i].endDate = event.endDate;
                 }

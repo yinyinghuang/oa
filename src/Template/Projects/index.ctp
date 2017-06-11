@@ -66,15 +66,15 @@
         </div>
         </form>
     </div>
-    <table cellpadding="0" cellspacing="0" class="visible-lg">
+    <table cellpadding="0" cellspacing="0" class="visible-md">
         <thead>
             <tr>
                 <th scope="col" width="40"><?= $this->Paginator->sort('id') ?></th>
                 <th scope="col"><?= __('项目名称') ?></th>
                 <th scope="col" width="80"><?= $this->Paginator->sort('user_id', ['负责人']) ?></th>
                 <th scope="col" width="70"><?= $this->Paginator->sort('state', ['状态']) ?></th>
-                <th scope="col" width="120"><?= $this->Paginator->sort('start_date', ['开始时间']) ?></th>
-                <th scope="col" width="120"><?= $this->Paginator->sort('end_date', ['结束时间']) ?></th>
+                <th scope="col" width="120" class="visible-lg"><?= $this->Paginator->sort('start_date', ['开始时间']) ?></th>
+                <th scope="col" width="120" class="visible-lg"><?= $this->Paginator->sort('end_date', ['结束时间']) ?></th>
                 <th scope="col" width="120"><?= $this->Paginator->sort('modified', [' 更新时间']) ?></th>
                 <th scope="col" class="actions" width="120"><?= __('Actions') ?></th>
             </tr>
@@ -87,8 +87,8 @@
                 <td><?= $project->has('user') ? $this->Html->link($project->user->username, ['controller' => 'Users', 'action' => 'view', $project->user->id]) : '' ?></td>
                 <?php if ($project->state == 2 && date_format($project->end_time, 'Y-m-d H:i') < date('Y-m-d H:i')) $project->state ++; ?>
                 <td><span class="label <?= $stateArr['style'][$project->state]?>"><?= $stateArr['label'][$project->state] ?></span></td>
-                <td><?= h($project->start_time) ?></td>
-                <td><?= h($project->end_time) ?></td>
+                <td class="visible-lg"><?= h($project->start_time) ?></td>
+                <td class="visible-lg"><?= h($project->end_time) ?></td>
                 <td><?= h($project->modified) ?></td>
                 <td class="actions">
                     <?= $this->Html->link(__('View'), ['action' => 'view', $project->id]) ?>
@@ -101,7 +101,7 @@
             <?php endforeach; ?>
         </tbody>
     </table>
-    <div class="hidden-lg">
+    <div class="hidden-md">
         <?php foreach ($projects as $project): ?>
         <div class="row card text-left">
             <div class="col-xs-12 business_name text-center">編號：</i><?= h($project->id) ?><?php if (isset($projectRespArr[$state]) && in_array($project->id, $projectRespArr[$state])): ?><sup style="background: #D33C44;color: #fff;">new</sup><?php endif ?> </div>

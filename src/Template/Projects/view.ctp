@@ -128,7 +128,7 @@
                 <div class="clearfix"></div>
             </div>
             <div class="x_content"> 
-                <table cellpadding="0" cellspacing="0" class="visible-lg">
+                <table cellpadding="0" cellspacing="0" class="visible-md">
                     <tr>
                         <th scope="col" style="width: 8%"><?= __('Id') ?></th>
                         <th scope="col"><?= __('计划名称') ?></th>
@@ -161,7 +161,7 @@
                     </tr>
                     <?php endforeach; ?>
                 </table>
-                <div class="hidden-lg">
+                <div class="hidden-md">
                     <?php foreach ($project->project_schedules  as $projectSchedules): ?>
                     <div class="row card text-left">
                         <div class="col-xs-12 business_name text-center">編號：</i><?= h($projectSchedules->id) ?></div>

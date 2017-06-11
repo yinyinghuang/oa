@@ -44,7 +44,7 @@
             <div class="clearfix"></div>
         </div>
         <div class="x_content"> 
-            <table cellpadding="0" cellspacing="0" class="visible-lg">
+            <table cellpadding="0" cellspacing="0" class="visible-md">
                 <thead>
                     <tr>
                         <th scope="col" style="width: 40px"><?= __('id') ?></th>
@@ -66,7 +66,7 @@
                     <?php endforeach; ?>
                 </tbody>
             </table>
-            <div class="hidden-lg">
+            <div class="hidden-md">
                 <?php foreach ($tasks as $task): ?>
                 <div class="row card text-left">
                     <div class="col-xs-12 business_name text-center">編號：</i><?= h($task->id) ?></div>
@@ -99,7 +99,7 @@
             <div class="clearfix"></div>
         </div>
         <div class="x_content"> 
-            <table cellpadding="0" cellspacing="0" class="visible-lg">
+            <table cellpadding="0" cellspacing="0" class="visible-md">
                 <thead>
                     <tr>
                         <th scope="col" style="width: 40px"><?= __('id') ?></th>
@@ -121,7 +121,7 @@
                     <?php endforeach; ?>
                 </tbody>
             </table>
-            <div class="hidden-lg">
+            <div class="hidden-md">
                 <?php foreach ($notices as $notice): ?>
                 <div class="row card text-left">
                     <div class="col-xs-12 business_name text-center">編號：</i><?= h($notice->id) ?></div>
@@ -155,7 +155,7 @@
             <div class="clearfix"></div>
         </div>
         <div class="x_content"> 
-            <table cellpadding="0" cellspacing="0" class="visible-lg">
+            <table cellpadding="0" cellspacing="0" class="visible-md">
                 <thead>
                     <tr>
                         <th scope="col" style="width: 40px"><?= __('id') ?></th>
@@ -179,7 +179,7 @@
                     <?php endforeach; ?>
                 </tbody>
             </table>
-            <div class="hidden-lg">
+            <div class="hidden-md">
                 <?php foreach ($projectSchedules as $schedule): ?>
                 <?php $project = $schedule->project; ?>
                 <div class="row card text-left">
@@ -224,7 +224,7 @@
             <div class="clearfix"></div>
         </div>
         <div class="x_content"> 
-            <table cellpadding="0" cellspacing="0" class="visible-lg">
+            <table cellpadding="0" cellspacing="0" class="visible-md">
                 <thead>
                     <tr>
                         <th scope="col" style="width: 40px"><?= __('id') ?></th>
@@ -248,7 +248,7 @@
                     <?php endforeach; ?>
                 </tbody>
             </table>
-            <div class="hidden-lg">
+            <div class="hidden-md">
                 <?php foreach ($projectSchedules as $schedule): ?>
                 <?php $project = $schedule->project; ?>
                 <div class="row card text-left">

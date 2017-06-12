@@ -127,7 +127,7 @@ $title = 'Market Hotpot';
                           <li><a href="<?= $this->Url->build(['controller' => 'Users', 'action' => 'index']) ?>">员工</a></li>
                           <li><a href="<?= $this->Url->build(['controller' => 'Departments', 'action' => 'index']) ?>">部门</a></li>
                           <li><a href="<?= $this->Url->build(['controller' => 'Privileges', 'action' => 'index']) ?>">权限</a></li>
-                          <li class="visible-md"><a href="<?= $this->Url->build(['controller' => 'Configs', 'action' => 'index']) ?>">节假日</a></li>
+                          <li class="visible-md visible-lg"><a href="<?= $this->Url->build(['controller' => 'Configs', 'action' => 'index']) ?>">节假日</a></li>
                         </ul>
                       </li>
                     </ul>

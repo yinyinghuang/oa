@@ -66,7 +66,7 @@
         </div>
         </form>
     </div>
-    <table cellpadding="0" cellspacing="0" class="visible-md">
+    <table cellpadding="0" cellspacing="0" class="visible-md visible-lg">
         <thead>
             <tr>
                 <th scope="col" width="40"><?= $this->Paginator->sort('id') ?></th>
@@ -101,7 +101,7 @@
             <?php endforeach; ?>
         </tbody>
     </table>
-    <div class="hidden-md">
+    <div class="hidden-md hidden-lg">
         <?php foreach ($projects as $project): ?>
         <div class="row card text-left">
             <div class="col-xs-12 business_name text-center">編號：</i><?= h($project->id) ?><?php if (isset($projectRespArr[$state]) && in_array($project->id, $projectRespArr[$state])): ?><sup style="background: #D33C44;color: #fff;">new</sup><?php endif ?> </div>

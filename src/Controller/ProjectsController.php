@@ -458,9 +458,51 @@ class ProjectsController extends AppController
         }
         $this->request->allowMethod(['post']);
         $project->state = 2;
+
         //更新项目的结束时间
-        $span = $this->getSpan($project->start_time, $project->end_time);
-        print_r($span);exit('sssssssssss');
+        $end_time = date_format($project->end_time, 'Ymd');
+
+        $hangup_time = $this->Projects->ProjectLogs->find()
+            ->where(['project_id' => $id])
+            ->order(['created DESC'])
+            ->first()->created;
+        $hangup_time = date_format($hangup_time, 'Ymd');
+        $now = date('Ymd', time())-1;
+
+        $this->loadModel('Holidays');
+        $this->loadModel('Configs');
+        $weekdays = $this->Configs->findByName('weekdays')->first()->content;
+        $weekdays = explode(',', $weekdays);
+        $holidays = $this->Holidays->find()//结束日期后的假期
+            ->where(['type' => 0, 'end_date >= ' => $end_time]);
+        $workdays = $this->Holidays->find()//结束日期后的补假
+            ->where(['type' => 1, 'end_date >= ' => $end_time]);
+
+        $hangupSpan = $this->getSpan($hangup_time, $now);//挂起的时间
+        print_r($hangupSpan);
+        //项目计划中的结束时间，若结束时间晚于挂起时间，则需更新
+        foreach ($project->project_schedules as $value) {
+            $participants[] = $value->user_id;
+            $taskIds[] =  $value->task_id;
+            if($value->end_time >= $hangup_time) {
+                $value->end_time = date_format($value->end_time, 'Ymd');
+                $updateScheduleArr[] = $value;
+            }
+        }
+        for ($i=0; $i < $hangupSpan; $i++) { 
+            $end_time ++;
+            while(!$this->getDateType($end_time, $weekdays, $holidays, $workdays)) {//后一天是假期，则继续顺延
+                $end_time ++;
+            }//后一天上班，则进入下一个循环
+            foreach ($updateScheduleArr as $value) {
+                $value->end_time ++;
+                while (!$this->getDateType($value->end_time, $weekdays, $holidays, $workdays)) {
+                    $value->end_time ++ ;
+                }
+            }
+        }
+
+        print_r($updateScheduleArr);exit('sssssssssss');
         if ($this->Projects->save($project)) {
             //项目状态日志插入
             $query = $this->Projects->ProjectLogs->newEntity([
@@ -471,10 +513,7 @@ class ProjectsController extends AppController
 
             // 通知项目参与人项目状态更新
             $entities = $participants = $taskIds = [];
-            foreach ($project->project_schedules as $value) {
-                $participants[] = $value->user_id;
-                $taskIds[] =  $value->task_id;
-            }
+            
             $participants[] = $project->user_id;
             $participants[] = $project->auditor;
             $participants = array_unique($participants);
@@ -660,26 +699,48 @@ class ProjectsController extends AppController
         return $this->response;
     }
 
-    private function getDateType($date){
-        $date = '20170610';
-        $url = 'http://www.easybots.cn/api/holiday.PHP?d=' . $date;
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        $resp = curl_exec($ch) ;
-        curl_close($ch);
-        var_dump($resp);
-        return $resp[$date];
+    private function getDateType($date, $weekdays, $holidays, $workdays){
+        
+        $w = date('N',strtotime($date));
+        if (in_array($w, $weekdays)) {//是周内。
+            $flag = 1; 
+            foreach ($holidays as $holiday) {
+                if($date >= $holiday->start_date && $date <= $holiday->end_date) {//法定节假日
+                    $flag = 0;
+                    continue;
+                }
+            }
+        } else {//周末
+            $flag = 0;
+            foreach ($holidays as $holiday) {
+                if($date >= $holiday->start_date && $date <= $holiday->end_date) {//补假
+                    $flag = 1;
+                    continue;
+                }
+            }
+        }
+        return $flag;
     }
 
     private function getSpan($start_time, $end_time){
-        $span = 0;
-        // while ($start_time < $end_time) {
-            $dateType = $this->getDateType($start_time);
 
-            // if ($dateType) continue;
-            $span ++ ;
-            $start_time->modify('+1 day');
-        // }
+        $span = 0;
+
+        $this->loadModel('Holidays');
+        $this->loadModel('Configs');
+        $weekdays = $this->Configs->findByName('weekdays')->first()->content;
+        $weekdays = explode(',', $weekdays);
+        $holidays = $this->Holidays->find()
+            ->where(['type' => 0, 'OR' => ['start_date <= ' => $start_time, 'end_date >= ' => $end_time]]);
+        $workdays = $this->Holidays->find()
+            ->where(['type' => 1, 'OR' => ['start_date <= ' => $start_time, 'end_date >= ' => $start_time]]);
+
+        while ($start_time <= $end_time) {
+            $dateType = $this->getDateType($start_time, $weekdays, $holidays, $workdays);
+            $span += $dateType;
+
+            $start_time ++ ;
+        }
         return $span;
     }
 }

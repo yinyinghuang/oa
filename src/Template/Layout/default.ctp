@@ -269,7 +269,7 @@ $title = 'Market Hotpot';
                       new PNotify({
                           title: '任务<small class="pull-right" style="color:#fff">' + cur.model + '<small>',
                           text: '<a href="' + cur.deal.url + '" style="color:#fff">' + cur.item + '</a>',
-                          icon: 'glyphicon glyphicon-task',
+                          icon: 'glyphicon glyphicon-tasks',
                           type: 'notice',
                           styling: 'bootstrap3',
                           delay: 3000,

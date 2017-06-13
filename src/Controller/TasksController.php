@@ -203,7 +203,7 @@ class TasksController extends AppController
         $this->loadModel('Finances');
         $this->loadModel('Dropboxes');
         $time =  date('Y-m-d H:i:s', strtotime(substr($this->request->getData('time'), 0, 34)));           
-        $tasks = $this->Tasks->find('all',['conditions'=>['user_id' => $_user['id'],'state in' => [0,1]]]);
+        $tasks = $this->Tasks->find('all',['conditions'=>['user_id' => $_user['id'],'state in' => [0,1]], 'created >= ' => $time]);
         foreach ($tasks as $task) {
             switch ($task->controller) {
                 case 'Projects':
@@ -277,7 +277,7 @@ class TasksController extends AppController
         $this->loadModel('Notices');
         
         $notices = $this->Notices->find('all',[
-            'conditions'=>['user_id' => $_user['id'], 'state' => 0]
+            'conditions'=>['user_id' => $_user['id'], 'state' => 0, 'created >= ' => $time]
         ]);
         foreach ($notices as $notice) {
             switch ($notice->controller) {

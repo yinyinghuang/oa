@@ -116,7 +116,7 @@
         $('.datetimepicker').daterangepicker({
             "calender_style": "picker_3",
             "singleDatePicker": true,
-            "format" : "YYYY-MM-DD HH:mm",
+            "format" : "YYYY-MM-DD",
           }, function(start, end, label) {
         });
 
@@ -205,8 +205,12 @@
           }
         });
         $('#submit').on('click', function(){
-            var num = $('#num').val();
+            var num = $('#num').val(),
+                flag = false,
+                start_time_p = $('#start-time').val(),
+                end_time_p = $('#end-time').val();
             for (var i = 1; i <= num; i++) {
+                if (!document.getElementById('participant-id-' + i)) continue;
                 var value = $('#participant-id-' + i).val();
                 if(value == ''){
                     new PNotify({
@@ -218,9 +222,34 @@
                         width:'280px'
                     });
                     $('#participant-' + i).focus();
-                    return false;                    
+                    flag = true;                   
+                }
+                if (start_time_p > $('#start-time-' + i).val()) {
+                    new PNotify({
+                        title: '錯誤',
+                        text: '计划' + i + '开始时间早于项目开始时间，请重新填写',
+                        type: 'error',
+                        styling: 'bootstrap3',
+                        delay: 3000,
+                        width:'280px'
+                    });
+                    $('#start-time-' + i).focus();
+                    flag = true;
+                }
+                if (end_time_p < $('#end-time-' + i).val()) {
+                    new PNotify({
+                        title: '錯誤',
+                        text: '计划' + i + '结束时间晚于项目开始时间，请重新填写',
+                        type: 'error',
+                        styling: 'bootstrap3',
+                        delay: 3000,
+                        width:'280px'
+                    });
+                    $('#end-time-' + i).focus();
+                    flag = true;
                 }
             }
+            if (flag) return false;
         });
     });
 

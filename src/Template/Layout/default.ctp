@@ -238,10 +238,59 @@ $title = 'Market Hotpot';
         <?= $this->Html->script('vendors/switchery/dist/switchery.min.js') ?>
 
         <?= $this->fetch('script') ?>
+        <script type="text/javascript">var toggle;
+        $(document).on('visibilitychange', function () {
+            
+            if(!document.hidden) {//页面切换为可见时，获取最新消息及任务
+              if ((new Date() - toggle)/1000 > 60) {
+                $.ajax({
+                  type : 'post',
+                  url : '/tasks/get-new',
+                  data : {
+                    time : toggle
+                  },
+                  success: function(data){
+                    data = JSON.parse(data);
+
+                    for(var i in data.notices) {
+                      var cur = data.notices[i]; 
+                      new PNotify({
+                          title: '通知<small class="pull-right" style="color:#fff">' + cur.model + '<small>',
+                          text: '<a href="' + cur.deal.url + '" style="color:#fff">' + cur.item + '</a>',
+                          icon: 'glyphicon glyphicon-envelope',
+                          type: 'info',
+                          styling: 'bootstrap3',
+                          delay: 3000,
+                          width:'280px'
+                      });
+                    }
+                    for(var i in data.tasks) {
+                      var cur = data.tasks[i]; 
+                      new PNotify({
+                          title: '任务<small class="pull-right" style="color:#fff">' + cur.model + '<small>',
+                          text: '<a href="' + cur.deal.url + '" style="color:#fff">' + cur.item + '</a>',
+                          icon: 'glyphicon glyphicon-task',
+                          type: 'notice',
+                          styling: 'bootstrap3',
+                          delay: 3000,
+                          width:'280px'
+                      });
+                    }
+                  },
+                  error : function(){
+
+                  }
+                });
+              }
+            } else {//记录窗口不可见时间
+              toggle = new Date();
+            }
+        });
         <!-- END JAVASCRIPT -->
         <?= $this->Flash->render() ?>
-
-
+  
+        </script>
+        
 
 
     </body>

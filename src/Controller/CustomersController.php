@@ -53,11 +53,20 @@ class CustomersController extends AppController
      */
     public function view($id = null)
     {
+        $_user = $this->request->session()->read('Auth')['User'];
+        //更新通知中的客户交易，将此前客户交易消息标记为已读
+        $this->loadModel('Notices');
+        $where = ['user_id' => $_user['id'], 'controller' => 'CustomerBusinesses', 'state' => 0];
+        $this->Notices->query()
+            ->update()
+            ->set(['state' => 1])
+            ->where($where)
+            ->execute();
         $customer = $this->Customers->get($id, [
             'contain' => ['CustomerCategories', 'Users', 'CustomerBusinesses' => function($q){
                 return $q->find('all', [
                     'contain' => ['Users'],
-                    'fields' => ['CustomerBusinesses.id','CustomerBusinesses.customer_id','CustomerBusinesses.content','CustomerBusinesses.start_time','CustomerBusinesses.end_time','CustomerBusinesses.modified','Users.username'],
+                    'fields' => ['CustomerBusinesses.id','CustomerBusinesses.customer_id','CustomerBusinesses.content','CustomerBusinesses.state','CustomerBusinesses.start_time','CustomerBusinesses.end_time','CustomerBusinesses.modified','Users.username'],
                     'limit' => 5,
                     'order' => ['CustomerBusinesses.modified' => 'DESC']
                 ]);

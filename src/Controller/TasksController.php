@@ -61,13 +61,13 @@ class TasksController extends AppController
                     $this->loadModel('CustomerBusinesses');
                     $query = $this->CustomerBusinesses->get($task->itemid,[
                         'contain' => ['Users'],
-                        'fields' => ['CustomerBusinesses.content','CustomerBusinesses.id','Users.username','Users.id']
+                        'fields' => ['CustomerBusinesses.content','CustomerBusinesses.customer_id','Users.username','Users.id']
                     ]);
                     $task->item = $query->content;
                     $task->operator = $query->user;
                     $task->status = '进行中';
                     $data = [];
-                    $data['url'] = ['controller' => 'CustomerBusinesses', 'action' => 'view',$query->id];
+                    $data['url'] = ['controller' => 'Customers', 'action' => 'view',$query->customer_id];
                     $data['label'] = '查看';
                     $task->deal = $data;
                 break;
@@ -190,5 +190,159 @@ class TasksController extends AppController
         $this->Tasks->save($task);
 
         return $this->redirect($this->referer());
+    }
+
+    public function getNew()
+    {
+        $this->request->allowMethod(['post']);
+        $_user = $this->request->session()->read('Auth')['User'];
+        //获取最新任务
+        $this->loadModel('Tasks');
+        $this->loadModel('Customers');
+        $this->loadModel('Projects');
+        $this->loadModel('Finances');
+        $this->loadModel('Dropboxes');
+        $time =  date('Y-m-d H:i:s', strtotime(substr($this->request->getData('time'), 0, 34)));           
+        $tasks = $this->Tasks->find('all',['conditions'=>['user_id' => $_user['id'],'state in' => [0,1]]]);
+        foreach ($tasks as $task) {
+            switch ($task->controller) {
+                case 'Projects':
+                    $task['model'] = '项目审核';
+                    $query = $this->Tasks->Projects->get($task->itemid,[
+                        'contain' => ['Users'],
+                        'fields' => ['Projects.title','Projects.id','Users.username','Users.id']
+                    ]);
+                    $task->item = $query->title;
+                    $task->operator = $query->user;
+                    $task->status = '待审核';
+                    $data = [];
+                    $data['url'] = '/projects/check/'. $task->itemid;
+                    $data['label'] = '审核';
+                    $task->deal = $data;
+                break;
+
+                case 'ProjectSchedules':
+                    $task['model'] = '项目计划';
+                    $query = $this->Tasks->ProjectSchedules->get($task->itemid,[
+                        'contain' => ['Users'],
+                        'fields' => ['ProjectSchedules.title','ProjectSchedules.end_time','ProjectSchedules.id','Users.username','Users.id']
+                    ]);
+                    $task->item = $query->title;
+                    $task->operator = $query->user;
+                    $task->status = date_format($query->end_time, 'Y-m-d H:i') >= date('Y-m-d H:i') ? '进行中' : '已延期';
+                    $data = [];
+                    $data['url'] = 'project-schedules/view/' . $task->itemid;
+                    $data['label'] = '查看';
+                    $task->deal = $data;
+                break;
+
+                case 'CustomerBusinesses':
+                    $task['model'] = '客户交易';
+                    $this->loadModel('CustomerBusinesses');
+                    $query = $this->CustomerBusinesses->get($task->itemid,[
+                        'contain' => ['Users'],
+                        'fields' => ['CustomerBusinesses.content','CustomerBusinesses.customer_id','Users.username','Users.id']
+                    ]);
+                    $task->item = $query->content;
+                    $task->operator = $query->user;
+                    $task->status = '进行中';
+                    $data = [];
+                    $data['url'] = '/customers/view/' . $query->customer_id;
+                    $data['label'] = '查看';
+                    $task->deal = $data;
+                break;
+
+                case 'FinanceApplies':
+                    $task['model'] = '经费审核';
+                    $this->loadModel('Users');
+                    $query = $this->Tasks->FinanceApplies->get($task->itemid,[
+                        'fields' => ['FinanceApplies.amount','FinanceApplies.content','FinanceApplies.id','FinanceApplies.user_id']
+                    ]);
+                    $task->item = '申请原因：' . $query->content . '</br>申请金额：' . $query->amount;
+                    $task->operator = $this->Users->get($query->user_id,['fields' => ['Users.id','Users.username']]);
+                    $task->status = '待审核';
+                    $data = [];
+                    $data['url'] = '/finances/add/' . $tasks->id;
+                    $data['label'] = '拨款';
+                    $task->deal = $data;
+                break;
+                    
+                default:
+                    
+                break;
+            }
+        }
+
+        //获取最新通知
+        $this->loadModel('Notices');
+        
+        $notices = $this->Notices->find('all',[
+            'conditions'=>['user_id' => $_user['id'], 'state' => 0]
+        ]);
+        foreach ($notices as $notice) {
+            switch ($notice->controller) {
+                case 'Projects':
+                    $notice['model'] = '项目更新';
+                    $query = $this->Projects->get($notice->itemid,[
+                        'contain' => ['Users'],
+                        'fields' => ['Projects.title','Users.username','Users.id','Projects.state']
+                    ]);
+                    $notice->item = $query->title . '状态更新：' . $projectStateArr['label'][$query->state];
+                    $notice->operator = $query->user;
+                    $data = [];
+                    $data['url'] = '/projects/view/'. $notice->itemid;
+                    $data['label'] = '查看';
+                    $notice->deal = $data;
+                break;
+
+                case 'ProjectSchedules':
+                    $notice->model = '进度更新';
+                    $query = $this->Projects->ProjectSchedules->get($notice->itemid,[
+                        'contain' => ['Users'],
+                        'fields' => ['ProjectSchedules.title','ProjectSchedules.progress','ProjectSchedules.project_id','Users.username','Users.id']
+                    ]);
+                    $notice->item = $query->title . '进度更新：' . $query->progress . '%';
+                    $notice->operator = $query->user;
+                    $data = [];
+                    $data['url'] = '/projects/view/'. $query->project_id;
+                    $data['label'] = '查看';
+                    $notice->deal = $data;
+                break;
+
+                case 'CustomerBusinesses':
+                    $notice['model'] = '客户交易';
+                    $this->loadModel('CustomerBusinesses');
+                    $query = $this->CustomerBusinesses->get($notice->itemid,[
+                        'contain' => ['Users'],
+                        'fields' => ['CustomerBusinesses.content','CustomerBusinesses.id','Users.username','Users.id']
+                    ]);
+                    $notice->item = $query->content;
+                    $notice->operator = $query->user;
+                    $data = [];
+                    $data['url'] = '/customer-businesses/view' . $query->id;
+                    $data['label'] = '查看';
+                    $notice->deal = $data;
+                break;
+
+                case 'Finances':
+                    $notice['model'] = '经费入账';
+                    $this->loadModel('Users');
+                    $query = $this->Finances->get($notice->itemid,[
+                        'fields' => ['Finances.amount','Finances.payee_id']
+                    ]);
+                    $notice->item = '入账金额：' . $query->amount . '，目前账户余额为' . $query->finance_balance['balance'] . '元';
+                    $notice->operator = $this->Users->get($query->user_id,['fields' => ['Users.id','Users.username']]);
+                    $data = [];
+                    $data['url'] = '/finances/index';
+                    $data['label'] = '查看';
+                    $notice->deal = $data;
+                break;
+            }
+        }
+
+        $resp['tasks'] = $tasks;
+        $resp['notices'] = $notices;
+        $this->response->body(json_encode($resp));
+        return $this->response;
     }
 }

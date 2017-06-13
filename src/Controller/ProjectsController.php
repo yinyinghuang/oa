@@ -133,16 +133,16 @@ class ProjectsController extends AppController
                 'brief' => $this->request->getData('brief'),
                 'attachment' => $this->request->getData('attachment'),
                 'state' => 1,
-                'start_time' => $this->request->getData('start_time'),
-                'end_time' => $this->request->getData('end_time'),
+                'start_time' => $this->request->getData('start_time') . ' 00:00:00',
+                'end_time' => $this->request->getData('end_time') . ' 23:59:59',
             ];
             for ($i=1; $i <= $this->request->getData('num') ; $i++) {
                 $schedules['title'] = $this->request->getData('title_' . $i);
                 $schedules['brief'] = $this->request->getData('brief_' . $i);
                 $schedules['user_id'] = $this->request->getData('participant_id_' . $i);
                 $schedules['state'] = 1;
-                $schedules['start_time'] = $this->request->getData('start_time_' . $i);
-                $schedules['end_time'] = $this->request->getData('end_time_' . $i);
+                $schedules['start_time'] = $this->request->getData('start_time_' . $i) . ' 00:00:00';
+                $schedules['end_time'] = $this->request->getData('end_time_' . $i) . ' 23:59:59';
                 $data['project_schedules'][] = $schedules;
                 $participants[$this->request->getData('participant_' . $i)] = 1;
                 $participantIds[$this->request->getData('participant_id_' . $i)] = 1;
@@ -204,8 +204,8 @@ class ProjectsController extends AppController
                 'auditor' => $this->request->getData('auditor'),
                 'attachment' => $this->request->getData('attachment'),
                 'state' => 1,
-                'start_time' => $this->request->getData('start_time'),
-                'end_time' => $this->request->getData('end_time'),
+                'start_time' => $this->request->getData('start_time') . ' 00:00:00',
+                'end_time' => $this->request->getData('end_time') . ' 23:59:59',
             ];
             for ($i=1; $i <= $this->request->getData('num') ; $i++) {
                 if (!isset($_POST['title_' . $i])) continue;
@@ -214,8 +214,8 @@ class ProjectsController extends AppController
                 $schedules['brief'] = $this->request->getData('brief_' . $i);
                 $schedules['user_id'] = $this->request->getData('participant_id_' . $i);
                 $schedules['state'] = 1;
-                $schedules['start_time'] = $this->request->getData('start_time_' . $i);
-                $schedules['end_time'] = $this->request->getData('end_time_' . $i);
+                $schedules['start_time'] = $this->request->getData('start_time_' . $i) . ' 00:00:00';
+                $schedules['end_time'] = $this->request->getData('end_time_' . $i) . ' 23:59:59';
                 $data['project_schedules'][] = $schedules;
                 $participants[$this->request->getData('participant_' . $i)] = 1;
                 $participantIds[$this->request->getData('participant_id_' . $i)] = 1;
@@ -501,8 +501,14 @@ class ProjectsController extends AppController
                 }
             }
         }
+        foreach ($updateScheduleArr as $value) {
+            $split = str_split($value->end_time);
+            $value->end_time = $split[0] . $split[1]. $split[2]. $split[3]. '-' . $split[4]. $split[5]. '-' . $split[6]. $split[7] . ' 23:59:59';
+        }
 
-        print_r($updateScheduleArr);exit('sssssssssss');
+        $split = str_split($end_time);
+        $project->end_time = $split[0] . $split[1]. $split[2]. $split[3]. '-' . $split[4]. $split[5]. '-' . $split[6]. $split[7] . ' 23:59:59';
+        
         if ($this->Projects->save($project)) {
             //项目状态日志插入
             $query = $this->Projects->ProjectLogs->newEntity([
@@ -523,7 +529,7 @@ class ProjectsController extends AppController
                     'controller' => 'Projects',
                     'itemid' => $project->id,
                     'user_id' => $value,
-                    'remark' => 6,
+                    'remark' => 2,
                     'state' => 0
                 ];
             }
@@ -533,6 +539,7 @@ class ProjectsController extends AppController
             $this->Notices->saveMany($notice);
 
             //更新项目计划任务、项目计划的状态为进行中   
+            $this->Projects->ProjectSchedules->saveMany($updateScheduleArr);
             if ($taskIds) {
                 $this->Tasks->query() 
                 ->update()

@@ -119,6 +119,17 @@ class CustomerBusinessesController extends AppController
         $this->set('_serialize', ['customerBusiness']);
     }
 
+    public function done($id = null)
+    {
+        $this->request->allowMethod(['post']);
+        $customerBusiness = $this->CustomerBusinesses->get($id);
+        $customerBusiness->state = 1;
+        $this->CustomerBusinesses->save($customerBusiness);
+        $this->loadModel('Tasks');
+        $this->Tasks->deleteAll(['controller' => 'CustomerBusinesses', 'itemid' => $customerBusiness->id, 'user_id' => $customerBusiness->user_id]);
+        return $this->redirect(['controller' => 'Customers', 'action' => 'view',$customerBusiness->customer_id]);
+    }
+
     /**
      * Delete method
      *

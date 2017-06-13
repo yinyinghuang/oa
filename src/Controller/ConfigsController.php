@@ -31,8 +31,9 @@ class ConfigsController extends AppController
                 $row->type = intval($row->type);
                 return $row;
             });
-
-        $this->set(compact('holidays'));
+        $weekdays = $this->Configs->findByName('weekdays')->first()->content;
+        $weekdays = explode(',', $weekdays);
+        $this->set(compact('holidays','weekdays'));
     }
 
     /**

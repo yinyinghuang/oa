@@ -88,7 +88,7 @@
             <div class="x_content">   
                 <table cellpadding="0" cellspacing="0" class="visible-lg">
                     <tr>
-                        <th scope="col"><?= __('Id') ?></th>
+                        <th scope="col" width="60"><?= __('Id') ?></th>
                         <th scope="col"><?= __('内容') ?></th>
                         <th scope="col"><?= __('开始时间') ?></th>
                         <th scope="col"><?= __('结束时间') ?></th>
@@ -105,6 +105,10 @@
                         <td class="actions">
                             <?= $this->Html->link(__('View'), ['controller' => 'CustomerBusinesses', 'action' => 'view', $customerBusinesses->id]) ?>
                             <?= $this->Html->link(__('Edit'), ['controller' => 'CustomerBusinesses', 'action' => 'edit', $customerBusinesses->id]) ?>
+                            <?php if (h($customerBusinesses['end_time']) && !$customerBusinesses['state']): ?>
+                            <?= $this->Form->postLink(__('Done'), ['controller' => 'CustomerBusinesses', 'action' => 'done', $customerBusinesses->id], ['confirm' => __('确定已完成此交易')]) ?>    
+                            <?php endif ?>
+                            
                             <?= $this->Form->postLink(__('Delete'), ['controller' => 'CustomerBusinesses', 'action' => 'delete', $customerBusinesses->id], ['confirm' => __('Are you sure you want to delete # {0}?', $customerBusinesses->id)]) ?>
                         </td>
                     </tr>
@@ -149,7 +153,7 @@
             <table cellpadding="0" cellspacing="0">
                 <thead>
                     <tr>
-                        <th scope="col"><?= $this->Paginator->sort('id') ?></th>
+                        <th scope="col" width="60"><?= $this->Paginator->sort('id') ?></th>
                         <th scope="col"><?= $this->Paginator->sort('user_id',['经办人']) ?></th>
                         <th scope="col"><?= $this->Paginator->sort('amount',['金额']) ?></th>
                         <th scope="col" class="visible-sm"><?= $this->Paginator->sort('detail',['明细']) ?></th>

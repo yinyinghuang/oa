@@ -23,8 +23,7 @@
             <label class="col-md-2 col-xs-12">项目日期</label>
             <div class="col-md-6 col-xs-12">
                 <div class="input-group">
-                    <input type="text" name="start_time" class="form-control datetimepicker" readonly="readonly" required id="start
-                    -time">
+                    <input type="text" name="start_time" class="form-control datetimepicker" readonly="readonly" required id="start-time">
                     <span class="input-group-addon">至</span>
                     <input type="text" name="end_time" class="form-control datetimepicker" readonly="readonly" required id="end-time">
                 </div>
@@ -53,9 +52,9 @@
             <label class="col-md-2 col-xs-12">计划日期</label>
             <div class="col-md-6 col-xs-12">
                 <div class="input-group">
-                    <input type="text" name="start_time_1" class="form-control datetimepicker" readonly="readonly" required>
+                    <input type="text" name="start_time_1" class="form-control datetimepicker" readonly="readonly" required id="start-time-1">
                     <span class="input-group-addon">至</span>
-                    <input type="text" name="end_time_1" class="form-control datetimepicker" readonly="readonly" required>
+                    <input type="text" name="end_time_1" class="form-control datetimepicker" readonly="readonly" required id="end-time-1">
                 </div>
             </div> 
             <div class="clearfix"></div>
@@ -104,7 +103,7 @@
         $('.datetimepicker').daterangepicker({
             "calender_style": "picker_3",
             "singleDatePicker": true,
-            "format" : "YYYY-MM-DD HH:mm",
+            "format" : "YYYY-MM-DD",
             'minDate' : moment(),
           }, function(start, end, label) {
         });
@@ -150,7 +149,7 @@
         add.on('click', function(){
             var num = $('#num'),
                 i = num.val() * 1 + 1,
-                html = '<div id="add-' + i + '"><div class="input text required"><label for="title-' + i + '">计划' + i + '名称</label><input type="text" name="title_' + i + '" id="title-' + i + '" required /></div><div class="input textarea required"><label for="brief-' + i + '">工作内容</label><textarea name="brief_' + i + '" id="brief-' + i + '" rows="5" required></textarea></div><input type="hidden" name="participant_id_' + i + '" id="participant-id-' + i + '"/><div class="input text required"><label for="participant-' + i + '">参与人</label><input type="text" name="participant_' + i + '" id="participant-' + i + '" required/></div><div class="input required"><label class="col-md-1 col-xs-12">计划日期</label><div class="col-md-6 col-xs-12">    <div class="input-group"><input type="text" name="start_time_' + i + '" class="form-control datetimepicker" readonly="readonly" required><span class="input-group-addon">至</span><input type="text" name="end_time_' + i + '" class="form-control datetimepicker" readonly="readonly" required></div></div><div class="clearfix"></div></div><div class="ln_solid"></div></div>',
+                html = '<div id="add-' + i + '"><div class="input text required"><label for="title-' + i + '">计划' + i + '名称</label><input type="text" name="title_' + i + '" id="title-' + i + '" required /></div><div class="input textarea required"><label for="brief-' + i + '">工作内容</label><textarea name="brief_' + i + '" id="brief-' + i + '" rows="5" required></textarea></div><input type="hidden" name="participant_id_' + i + '" id="participant-id-' + i + '"/><div class="input text required"><label for="participant-' + i + '">参与人</label><input type="text" name="participant_' + i + '" id="participant-' + i + '" required/></div><div class="input required"><label class="col-md-1 col-xs-12">计划日期</label><div class="col-md-6 col-xs-12">    <div class="input-group"><input type="text" name="start_time_' + i + '" class="form-control datetimepicker" readonly="readonly" required id="start-time-' + i + '"><span class="input-group-addon">至</span><input type="text" name="end_time_' + i + '" class="form-control datetimepicker" readonly="readonly" required id="end-time-' + i + '"></div></div><div class="clearfix"></div></div><div class="ln_solid"></div></div>',
                 del = '<a class="btn btn-danger" id="del">删除</a>';
             add.before(html);
             $('#participant-' + i).autocomplete({
@@ -205,7 +204,9 @@
         });
         $('#submit').on('click', function(){
             var num = $('#num').val(),
-                flag = false;
+                flag = false,
+                start_time_p = $('#start-time').val(),
+                end_time_p = $('#end-time').val();
             for (var i = 1; i <= num; i++) {
                 var value = $('#participant-id-' + i).val();
                 if(value == ''){
@@ -220,6 +221,30 @@
                     $('#participant-' + i).focus();
                     flag = true;                      
                 }
+                if (start_time_p > $('#start-time-' + i).val()) {
+                    new PNotify({
+                        title: '錯誤',
+                        text: '计划' + i + '开始时间早于项目开始时间，请重新填写',
+                        type: 'error',
+                        styling: 'bootstrap3',
+                        delay: 3000,
+                        width:'280px'
+                    });
+                    $('#start-time-' + i).focus();
+                    flag = true;
+                }
+                if (end_time_p < $('#end-time-' + i).val()) {
+                    new PNotify({
+                        title: '錯誤',
+                        text: '计划' + i + '结束时间晚于项目开始时间，请重新填写',
+                        type: 'error',
+                        styling: 'bootstrap3',
+                        delay: 3000,
+                        width:'280px'
+                    });
+                    $('#end-time-' + i).focus();
+                    flag = true;
+                }
             }
             if ($('#auditor').val() == '') {
                 new PNotify({
@@ -233,6 +258,7 @@
                 $('#participant-' + i).focus();
                 flag = true;      
             }
+
             if (flag) return false;
 
         });

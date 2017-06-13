@@ -19,13 +19,13 @@
             <div class="form-group">
               <label>上班时间</label>
               <div class="form-control">
-                  <label> <input type="checkbox" name="weekdays[]" value=1>星期一</label>
-                  <label> <input type="checkbox" name="weekdays[]" value=2>星期二</label>
-                  <label> <input type="checkbox" name="weekdays[]" value=3>星期三</label>
-                  <label> <input type="checkbox" name="weekdays[]" value=4>星期四</label>
-                  <label> <input type="checkbox" name="weekdays[]" value=5>星期五</label>
-                  <label> <input type="checkbox" name="weekdays[]" value=6>星期六</label>
-                  <label> <input type="checkbox" name="weekdays[]" value=7>星期日</label>
+                  <label> <input type="checkbox" name="weekdays[]" value=1 <?php if (in_array(1, $weekdays)): ?>checked<?php endif ?>>星期一</label>
+                  <label> <input type="checkbox" name="weekdays[]" value=2 <?php if (in_array(2, $weekdays)): ?>checked<?php endif ?>>星期二</label>
+                  <label> <input type="checkbox" name="weekdays[]" value=3 <?php if (in_array(3, $weekdays)): ?>checked<?php endif ?>>星期三</label>
+                  <label> <input type="checkbox" name="weekdays[]" value=4 <?php if (in_array(4, $weekdays)): ?>checked<?php endif ?>>星期四</label>
+                  <label> <input type="checkbox" name="weekdays[]" value=5 <?php if (in_array(5, $weekdays)): ?>checked<?php endif ?>>星期五</label>
+                  <label> <input type="checkbox" name="weekdays[]" value=6 <?php if (in_array(6, $weekdays)): ?>checked<?php endif ?>>星期六</label>
+                  <label> <input type="checkbox" name="weekdays[]" value=7 <?php if (in_array(7, $weekdays)): ?>checked<?php endif ?>>星期日</label>
               </div>
             </div>
             <div class="form-group">

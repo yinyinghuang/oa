@@ -1,6 +1,6 @@
 @charset "UTF-8";
 .left_col{background:#2A3F54;}
-.nav-sm .container.body .col-md-3.left_col{min-height:100%;width:70px;padding:0;z-index:9999;position:absolute;}
+.nav-sm .container.body .col-md-3.left_col{min-height:100%;width:70px;padding:0;z-index:999;position:absolute;}
 .nav-sm .container.body .col-md-3.left_col.menu_fixed{position:fixed;height:100%;}
 .nav-sm .container.body .col-md-3.left_col .mCSB_container,.nav-sm .container.body .col-md-3.left_col .mCustomScrollBox{overflow:visible;}
 .nav-sm .hidden-small{visibility:hidden;}

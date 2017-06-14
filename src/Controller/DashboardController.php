@@ -203,4 +203,106 @@ class DashboardController extends AppController
 
         $this->set(compact('tasks', 'taskModelArr', 'countTasks', 'notices', 'noticeModelArr', 'countNotices', 'projectSchedules', 'countProjects', 'projectStateArr', 'finances', 'countFinances'));
     }
+
+    public function getTask()
+    {
+        // $this->request->allowMethod(['post']);
+        // $start = date('Y-m-d h:i:s', ($_GET['start'] / 1000));
+        // $end = date('Y-m-d h:i:s', ($_GET['start'] / 1000));
+        $this->loadModel('Tasks');
+        $this->loadModel('Customers');
+        $this->loadModel('Projects');
+        $this->loadModel('Finances');
+        $this->loadModel('Dropboxes');
+        $_user = $this->request->session()->read('Auth')['User'];
+
+        $this->loadModel('UserDepartmentRoles');
+        $_positions = $this->UserDepartmentRoles->find('all',[
+            'conditions' => ['user_id' => $_user['id']]
+        ])->combine('department_id','role_id')->toArray();
+
+        //最近任务
+        $tasks = $this->Tasks->find('all',[
+            'conditions'=>['user_id' => $_user['id'],'state in' => [0,1]],
+            'order' => ['modified DESC'],
+            'limit' => 5
+        ]);
+        $countTasks = $this->Tasks->find('all',['conditions'=>['user_id' => $_user['id']]])->count();
+        $taskModelArr = ['Projects' => '项目审核', 'ProjectSchedules' => '项目计划', 'FinanceApplies' => '经费审核', 'CustomerBusinesses' => '客户交易'];
+        $respArr = [];
+        foreach ($tasks as $task) {
+            switch ($task->controller) {
+                case 'Projects':
+                    $task['model'] = '项目审核';
+                    $query = $this->Tasks->Projects->get($task->itemid,[
+                        'contain' => ['Users'],
+                        'fields' => ['Projects.title','Projects.id','Projects.start_time','Projects.end_time','Users.username','Users.id']
+                    ]);
+                    $resp = [];
+                    $resp['id'] = $task->id;
+                    $resp['title'] = $query->title;
+                    $resp['url'] = '/projects/check/'. $task->itemid;
+                    $resp['class'] = 'event-warning';
+                    $resp['start'] = $query->start_time->toUnixString() . '000';
+                    $resp['end'] = $query->end_time->toUnixString() . '000';
+                    $respArr['result'][] = $resp;
+                break;
+
+                case 'ProjectSchedules':
+                    $task['model'] = '项目计划';
+                    $query = $this->Tasks->ProjectSchedules->get($task->itemid,[
+                        'contain' => ['Users'],
+                        'fields' => ['ProjectSchedules.title','ProjectSchedules.start_time','ProjectSchedules.end_time','ProjectSchedules.id','Users.username','Users.id']
+                    ]);
+
+                    $resp = [];
+                    $resp['id'] = $task->id;
+                    $resp['title'] = $query->title;
+                    $resp['url'] = 'project-schedules/view/' . $task->itemid;
+                    $resp['class'] = 'event-success';
+                    $resp['start'] = $query->start_time->toUnixString() . '000';
+                    $resp['end'] = $query->end_time->toUnixString() . '000';
+                    $respArr['result'][] = $resp;
+                break;
+
+                case 'CustomerBusinesses':
+                    $task['model'] = '客户交易';
+                    $this->loadModel('CustomerBusinesses');
+                    $query = $this->CustomerBusinesses->get($task->itemid,[
+                        'contain' => ['Users'],
+                        'fields' => ['CustomerBusinesses.content','CustomerBusinesses.customer_id','CustomerBusinesses.start_time','CustomerBusinesses.end_time','Users.username','Users.id']
+                    ]);
+
+                    $resp = [];
+                    $resp['id'] = $task->id;
+                    $resp['title'] = $query->content;
+                    $resp['url'] = '/customers/view/' . $query->customer_id;
+                    $resp['class'] = 'event-special';
+                    $resp['start'] = $query->start_time->toUnixString() . '000';
+                    $resp['end'] = $query->end_time->toUnixString() . '000';
+                    $respArr['result'][] = $resp;
+                break;
+
+                case 'FinanceApplies':
+                    $task['model'] = '经费审核';
+                    $this->loadModel('Users');
+                    $query = $this->Tasks->FinanceApplies->get($task->itemid,[
+                        'fields' => ['FinanceApplies.amount','FinanceApplies.content','FinanceApplies.id','FinanceApplies.user_id']
+                    ]);
+
+                    $resp = [];
+                    $resp['id'] = $task->id;
+                    $resp['title'] = '申请原因：' . $query->content . '</br>申请金额：' . $query->amount;
+                    $resp['url'] = '/finances/add/' . $tasks->id;
+                    $resp['class'] = 'event-important';
+                    $resp['start'] = time() . '000';
+                    $resp['end'] = time() . '000';
+                    $respArr['result'][] = $resp;
+                break;
+            }
+        }
+        $respArr['success'] = 1;
+        $this->response->body(json_encode($respArr));
+        return $this->response;
+    }
 }

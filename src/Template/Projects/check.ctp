@@ -3,11 +3,10 @@
   * @var \App\View\AppView $this
   */
 ?>
-    
 <div class="col-md-6 col-sm-6 col-xs-12">
     <div class="x_panel">
         <div class="x_title">
-             <h3><?= h($project->title) ?></h3>
+             <h3>项目审核</h3>
             <ul class="nav navbar-right panel_toolbox">
                 <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a></li>
             </ul>
@@ -29,7 +28,7 @@
                 </tr>
                 <tr>
                     <th scope="row"><?= __('内容') ?></th>
-                    <td><?= h($project->brief) ?></td>
+                    <td><?= $project->brief ?></td>
                 </tr>
                 <tr>
                     <th scope="row"><?= __('Id') ?></th>

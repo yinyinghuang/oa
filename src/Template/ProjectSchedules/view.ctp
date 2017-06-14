@@ -36,7 +36,7 @@
                 </tr>
                 <tr>
                     <th scope="row"><?= __('内容') ?></th>
-                    <td><?= h($projectSchedule->brief) ?></td>
+                    <td><?= $projectSchedule->brief ?></td>
                 </tr>
                 <tr>
                     <th scope="row"><?= __('负责人') ?></th>

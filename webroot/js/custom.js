@@ -295,3 +295,36 @@ $SEARCH.on('click', function(){
         $SEARCH_BOX.slideUp();
     }
 });
+
+// $('body').on('touchstart', function(e) {
+//     var touch = e.originalEvent,
+//         startX = touch.changedTouches[0].pageX,
+//         startY = touch.changedTouches[0].pageY;
+//     $(this).on('touchmove', function(e) {
+//         // 判断默认行为是否可以被禁用
+//         if (e.cancelable) {
+//             // 判断默认行为是否已经被禁用
+//             if (!e.defaultPrevented) {
+//                 e.preventDefault();
+//             }
+//         }
+//         touch = e.originalEvent.touches[0] ||
+//             e.originalEvent.changedTouches[0];
+//         if (touch.pageX - startX > 80) {//右划显示侧栏
+//             if ($BODY.hasClass('nav-md')) {
+//                 $BODY.attr('class','nav-sm');
+//                 $SIDEBAR_MENU.find('li.active-sm ul').show();
+//                 $SIDEBAR_MENU.find('li.active-sm').addClass('active').removeClass('active-sm');
+//             }
+//         } else if (touch.pageX - startX < -80) {//左划隐藏侧栏
+//             if ($BODY.hasClass('nav-sm')) {
+//                 $BODY.attr('class','nav-md');
+//                 $SIDEBAR_MENU.find('li.active ul').hide();
+//                 $SIDEBAR_MENU.find('li.active').addClass('active-sm').removeClass('active');
+//             }
+//         } else if (Math.abs(touch.pageY - startY) > 50) {//左划隐藏侧栏
+            
+//         };
+//     });
+//     return false;
+// });

@@ -34,7 +34,7 @@
         </div>
     </div>
 </div>
-<div class="col-md-6 col-sm-6 col-xs-12">
+<!-- <div class="col-md-6 col-sm-6 col-xs-12">
     <div class="x_panel">
         <div class="x_title">
             <h4>最近任务<?php if ($backlogCount): ?><i class="badge badge-danger"><?= $backlogCount?></i><?php endif ?> </h4>
@@ -88,7 +88,7 @@
             <?php endif ?>
         </div>
     </div>
-</div>
+</div> -->
 <div class="col-md-6 col-sm-6 col-xs-12">   
     <div class="x_panel">
         <div class="x_title">
@@ -155,59 +155,30 @@
             <div class="clearfix"></div>
         </div>
         <div class="x_content"> 
-            <table cellpadding="0" cellspacing="0" class="visible-md visible-lg">
-                <thead>
-                    <tr>
-                        <th scope="col" style="width: 40px"><?= __('id') ?></th>
-                        <th scope="col"><?= __('项目名称') ?></th>
-                        <th scope="col" style="width: 70px"><?= __('发起人') ?></th>
-                        <th scope="col" style="width: 64px"><?= __('状态') ?></th>
-                        <th scope="col" style="width: 120px"><?= __('更新时间') ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($projectSchedules as $schedule): ?>
-                    <?php $project = $schedule->project; ?>
-                    <tr>
-                        <td><?= $this->Number->format($project->id) ?><?php if (isset($projectRespArr[2]) && in_array($project->id, $projectRespArr[2])): ?><sup style="background: #D33C44;color: #fff;">new</sup><?php endif ?> </td>
-                        <td><?= $this->Html->link(__($project->title), ['controller' => 'Projects', 'action' => 'view', $project->id]) ?></td>
-                        <td><?= $project->has('user') ? $this->Html->link($project->user->username, ['controller' => 'Users', 'action' => 'view', $project->user->id]) : '' ?></td>
-                        <?php if ($project->state == 2 && date_format($project->end_time, 'Y-m-d H:i') < date('Y-m-d H:i')) $project->state ++; ?>
-                        <td><span class="label <?= $projectStateArr['style'][$project->state]?>"><?= $projectStateArr['label'][$project->state] ?></span></td>
-                        <td><?= h($project->modified) ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-            <div class="hidden-md hidden-lg">
-                <?php foreach ($projectSchedules as $schedule): ?>
-                <?php $project = $schedule->project; ?>
-                <div class="row card text-left">
-                    <div class="col-xs-12 business_name text-center">編號：</i><?= h($project->id) ?><?php if (isset($projectRespArr[2]) && in_array($project->id, $projectRespArr[2])): ?><sup style="background: #D33C44;color: #fff;">new</sup><?php endif ?> </div>
-                    <div class="col-xs-6 business_name"><i class="fa fa-product-hunt"></i><?= h($project->title) ?></div>
-                    <div class="col-xs-6 business_user"><i class="fa fa-user"></i><?= h($project->user['username']) ?></div>            
-                    <div class="col-xs-12"><i class="fa fa-users"></i>参与人：<?= $project->participants?></div>
-                    <div class="col-xs-12"><i class="fa fa-clock-o"></i><?= $project->start_time  . '至' . $project->end_time?></div>
-                    <?php if ($project->state == 2): ?>
-                    <div class="col-xs-12">
-                        <div class="col-xs-12">
-                            <div class="progress">
-                                <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="<?= $project->progress ?>" aria-valuemin="0" aria-valuemax="100" style="width: <?= $project->progress ?>%">
-                                    <span style="display: inline-block;width: 100px;text-align:left;<?php if ($project->progress == 0): ?>color:#333<?php endif ?>"><?= $project->progress ?>%完成</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>  
-                    <?php endif ?>  
-                    <?php if (date_format($project->end_time, 'Y-m-d H:i') < date('Y-m-d H:i')) $project->state ++; ?>          
-                    <div class="col-xs-6">状态：<span class="label <?= $projectStateArr['style'][$project->state]?>"><?= $projectStateArr['label'][$project->state]?></span></div>
-                    <div class="col-xs-6 action">
-                        <?= $this->Html->link(__('View'), ['controller' => 'Projects', 'action' => 'view', $project->id],['class' => 'col-xs-4']) ?>                        
-                        <?= $this->Form->postLink(__('Delete'), ['controller' => 'Projects', 'action' => 'delete', $project->id], ['confirm' => __('Are you sure you want to delete # {0}?', $project->id),'class' => 'col-xs-4']) ?>
+            <div class="calendar-header">
+                <div class="pull-right form-inline">
+                    <div class="btn-group" style="width: 100%;padding: 0  0 10px">
+                        <span class="event event-warning" style="display: inline-block;"></span><span style="font-weight: 600">项目审核</span>
+                        <span class="event event-success" style="display: inline-block;"></span><span style="font-weight: 600">项目计划</span>
+                        <span class="event event-special" style="display: inline-block;"></span><span style="font-weight: 600">客户交易</span>
+                        <span class="event event-important" style="display: inline-block;"></span><span style="font-weight: 600">经费审核</span>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" data-calendar-nav="prev">&lt;&lt; Prev</button>
+                        <button class="btn btn-default" data-calendar-nav="today">Today</button>
+                        <button class="btn btn-primary" data-calendar-nav="next">Next &gt;&gt;</button>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-warning" data-calendar-view="year">Year</button>
+                        <button class="btn btn-warning active" data-calendar-view="month">Month</button>
+                        <button class="btn btn-warning" data-calendar-view="week">Week</button>
+                        <button class="btn btn-warning" data-calendar-view="day">Day</button>
                     </div>
                 </div>
-                <?php endforeach ?>
+                <h3><?= date('F') . ' ' . date('Y') ?></h3>
+                <div class="clearfix"></div>
             </div>
+            <div id="calendar"></div>
         </div>
         <?php if ($countProjects > 5): ?>
            <a class="btn btn-primary pull-right" href="<?= $this->Url->build(['controller' => 'Projects', 'action' => 'index']) ?>">更多</a> 
@@ -340,12 +311,31 @@
             <?php endif ?>
             <a class="btn btn-danger pull-right" href="<?= $this->Url->build(['controller' => 'Finances', 'action' => 'add']) ?>">记账</a>
         </div>
-    </div>    
+    </div> 
+    <div class="hidden" data-toggle="modal" data-target="#task-modal" id="modal-trigger">开始</div>
+    <div class="modal fade" id="task-modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h3>新任务</h3>
+                </div>
+                <div class="modal-body" style="height: 400px">
+                </div>
+                <div class="modal-footer">
+                    <a href="#" data-dismiss="modal" class="btn">关闭</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-<div class="clearfix"></div>
-
+<?= $this->start('css') ?>
+<?= $this->Html->css('../js/vendors/bootstrap-calendar/css/calendar.css') ?>
+<?= $this->end() ?>
 <div class="clearfix"></div>
 <?= $this->start('script') ?>
+<?= $this->Html->script('vendors/underscore/underscore.js') ?>
+<?= $this->Html->script('vendors/bootstrap-calendar/js/calendar.js') ?>
 <script type="text/javascript">
   $(function(){
     $('#checked').on('click', function(){
@@ -354,6 +344,79 @@
     $('#rejected').on('click', function(){
         $('#state').val(0);
     });
+    var options = {
+            events_source: '/dashboard/get-task',
+            view: 'month',
+            tmpl_path: '/js/vendors/bootstrap-calendar/tmpls/',
+            tmpl_cache: false,
+            time_start: '09:00',
+            time_end: '22:00',
+            time_split: '60',
+            display_week_numbers: false,
+            weekbox: false,
+            first_day: 1,
+            // modal: "#events-modal",
+            onAfterEventsLoad: function(events) {
+                if(!events) {
+                    return;
+                }
+                var list = $('#eventlist');
+                list.html('');
+
+                $.each(events, function(key, val) {
+                    $(document.createElement('li'))
+                        .html('<a href="' + val.url + '">' + val.title + '</a>')
+                        .appendTo(list);
+                });
+            },
+            onAfterViewLoad: function(view) {
+                $('.calendar-header h3').text(this.getTitle());
+                $('.btn-group button').removeClass('active');
+                $('button[data-calendar-view="' + view + '"]').addClass('active');
+            },
+            classes: {
+                months: {
+                    general: 'label'
+                }
+            }
+        };
+
+    var calendar = $('#calendar').calendar(options);
+    $('.btn-group button[data-calendar-nav]').each(function() {
+        var $this = $(this);
+        $this.click(function() {
+            calendar.navigate($this.data('calendar-nav'));
+        });
+    });
+
+    $('.btn-group button[data-calendar-view]').each(function() {
+        var $this = $(this);
+        $this.click(function() {
+            calendar.view($this.data('calendar-view'));
+        });
+    });
+    // var timeOutEvent = 0;
+    // $('.cal-cell1').on({
+    //     contextmenu : addTask,
+    //     // touchstart : function(e){
+    //     //     timeOutEvent = setTimeout(addTask,1000);
+    //     //     e.preventDefault();
+    //     // },
+    //     // touchmove : function(e){
+    //     //     clearTimeout(timeOutEvent); 
+    //     //     timeOutEvent = 0;
+    //     // },
+    //     // touchend : function(e){
+    //     //     clearTimeout(timeOutEvent); 
+    //     //     timeOutEvent = 0;
+    //     // }
+
+    // });
+    function addTask(){
+        timeOutEvent = 0; 
+        $('#modal-trigger').click();
+        return false;
+    }
   });
 </script> 
 <?= $this->end() ?>

@@ -150,7 +150,8 @@ $title = 'Market Hotpot';
               <div class="nav_menu">
                 <nav>
                   <div class="nav toggle">
-                    <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+                    <a id="menu_toggle" class="menu_toggle"><i class="fa fa-bars"></i></a>
+                    <a class="menu_toggle" style="position: fixed;right: 10px;bottom: 10px;padding: 10px;background: #2A3F54;z-index: 999;border-radius: 50%;"><i class="fa fa-bars"></i></a>
                   </div>
 
                   <ul class="nav navbar-nav navbar-right">
@@ -238,54 +239,8 @@ $title = 'Market Hotpot';
         <?= $this->Html->script('vendors/switchery/dist/switchery.min.js') ?>
 
         <?= $this->fetch('script') ?>
-        <script type="text/javascript">var toggle;
-        $(document).on('visibilitychange', function () {
-            
-            if(!document.hidden) {//页面切换为可见时，获取最新消息及任务
-              if ((new Date() - toggle)/1000 > 60) {
-                $.ajax({
-                  type : 'post',
-                  url : '/tasks/get-new',
-                  data : {
-                    time : toggle
-                  },
-                  success: function(data){
-                    data = JSON.parse(data);
-
-                    for(var i in data.notices) {
-                      var cur = data.notices[i]; 
-                      new PNotify({
-                          title: '通知<small class="pull-right" style="color:#fff">' + cur.model + '<small>',
-                          text: '<a href="' + cur.deal.url + '" style="color:#fff">' + cur.item + '</a>',
-                          icon: 'glyphicon glyphicon-envelope',
-                          type: 'info',
-                          styling: 'bootstrap3',
-                          delay: 3000,
-                          width:'280px'
-                      });
-                    }
-                    for(var i in data.tasks) {
-                      var cur = data.tasks[i]; 
-                      new PNotify({
-                          title: '任务<small class="pull-right" style="color:#fff">' + cur.model + '<small>',
-                          text: '<a href="' + cur.deal.url + '" style="color:#fff">' + cur.item + '</a>',
-                          icon: 'glyphicon glyphicon-tasks',
-                          type: 'notice',
-                          styling: 'bootstrap3',
-                          delay: 3000,
-                          width:'280px'
-                      });
-                    }
-                  },
-                  error : function(){
-
-                  }
-                });
-              }
-            } else {//记录窗口不可见时间
-              toggle = new Date();
-            }
-        });
+        <script type="text/javascript">
+        </script>
         <!-- END JAVASCRIPT -->
         <?= $this->Flash->render() ?>
   

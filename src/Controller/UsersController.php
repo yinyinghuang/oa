@@ -70,7 +70,7 @@ class UsersController extends AppController
                 for ($i=1; $i <= $this->request->getData('num') ; $i++) { 
                     $position = $this->UserDepartmentRoles->newEntity();
                     $position->user_id = $user->id;
-                    $position->department_id = $this->request->getData('department_' . $i);
+                    $position->department_id = $this->request->getData('department_id_' . $i);
                     $position->role_id = $this->request->getData('role_id_' . $i);
                     $this->UserDepartmentRoles->save($position);
                 }

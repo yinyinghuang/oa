@@ -119,21 +119,34 @@ class TasksController extends AppController
      *
      * @return \Cake\Http\Response|null Redirects on successful add, renders view otherwise.
      */
-    public function add()
+    public function addNote()
     {
-        $task = $this->Tasks->newEntity();
+        $this->request->allowMethod(['post']);
+        $data = 0; 
+        
         if ($this->request->is('post')) {
-            $task = $this->Tasks->patchEntity($task, $this->request->getData());
-            if ($this->Tasks->save($task)) {
-                $this->Flash->success(__('The task has been saved.'));
-
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The task could not be saved. Please, try again.'));
+            $this->loadModel('Notes');
+            $note = $this->Notes->newEntity([
+                'user_id' => $this->request->getData('user_id'),
+                'name' => $this->request->getData('name'),
+                'desc' => $this->request->getData('descp'),
+                'start_time' => $this->request->getData('start_time') . ' 00:00:00',
+                'end_time' => $this->request->getData('end_time') . ' 23:59:59',
+            ]);
+            if ($this->Notes->save($note)) {
+                $task = [
+                    'user_id' => $note->user_id,
+                    'controller' => 'Notes',
+                    'itemid' => $note->id,
+                    'state' => 0,
+                ];
+                $task = $this->Tasks->newEntity($task);
+                $this->Tasks->save($task);                
+                $data = 1;
+            }       
         }
-        $users = $this->Tasks->Users->find('list', ['limit' => 200]);
-        $this->set(compact('task', 'users'));
-        $this->set('_serialize', ['task']);
+        $this->response->body($data);
+        return $this->response;
     }
 
     /**
@@ -345,4 +358,5 @@ class TasksController extends AppController
         $this->response->body(json_encode($resp));
         return $this->response;
     }
+
 }

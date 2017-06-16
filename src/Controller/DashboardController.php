@@ -75,7 +75,7 @@ class DashboardController extends AppController
                     $query = $this->Tasks->FinanceApplies->get($task->itemid,[
                         'fields' => ['FinanceApplies.amount','FinanceApplies.content','FinanceApplies.id','FinanceApplies.user_id']
                     ]);
-                    $task->item = '申请原因：' . $query->content . '</br>申请金额：' . $query->amount;
+                    $task->item = '申请原因：' . $query->content . ',申请金额：' . $query->amount;
                     $task->operator = $this->Users->get($query->user_id,['fields' => ['Users.id','Users.username']]);
                     $data = [];
                     $data['url'] = ['controller' => 'Finances', 'action' => 'add',$task->id];
@@ -143,7 +143,7 @@ class DashboardController extends AppController
                         'fields' => ['Finances.amount','Finances.payee_id']
                     ]);
                     $notice->item = '入账金额：' . $query->amount . '，目前账户余额为' . $query->finance_balance['balance'] . '元';
-                    $notice->operator = $this->Users->get($query->user_id,['fields' => ['Users.id','Users.username']]);
+                    $notice->operator = $this->Users->get($query->payee_id,['fields' => ['Users.id','Users.username']]);
                     $data = [];
                     $data['url'] = ['controller' => 'Finances', 'action' => 'index'];
                     $data['label'] = '查看';
@@ -213,7 +213,7 @@ class DashboardController extends AppController
         $this->loadModel('Customers');
         $this->loadModel('Projects');
         $this->loadModel('Finances');
-        $this->loadModel('Dropboxes');
+        $this->loadModel('Notes');
         $_user = $this->request->session()->read('Auth')['User'];
 
         $this->loadModel('UserDepartmentRoles');
@@ -233,7 +233,6 @@ class DashboardController extends AppController
         foreach ($tasks as $task) {
             switch ($task->controller) {
                 case 'Projects':
-                    $task['model'] = '项目审核';
                     $query = $this->Tasks->Projects->get($task->itemid,[
                         'contain' => ['Users'],
                         'fields' => ['Projects.title','Projects.id','Projects.start_time','Projects.end_time','Users.username','Users.id']
@@ -249,7 +248,6 @@ class DashboardController extends AppController
                 break;
 
                 case 'ProjectSchedules':
-                    $task['model'] = '项目计划';
                     $query = $this->Tasks->ProjectSchedules->get($task->itemid,[
                         'contain' => ['Users'],
                         'fields' => ['ProjectSchedules.title','ProjectSchedules.start_time','ProjectSchedules.end_time','ProjectSchedules.id','Users.username','Users.id']
@@ -266,7 +264,6 @@ class DashboardController extends AppController
                 break;
 
                 case 'CustomerBusinesses':
-                    $task['model'] = '客户交易';
                     $this->loadModel('CustomerBusinesses');
                     $query = $this->CustomerBusinesses->get($task->itemid,[
                         'contain' => ['Users'],
@@ -284,7 +281,6 @@ class DashboardController extends AppController
                 break;
 
                 case 'FinanceApplies':
-                    $task['model'] = '经费审核';
                     $this->loadModel('Users');
                     $query = $this->Tasks->FinanceApplies->get($task->itemid,[
                         'fields' => ['FinanceApplies.amount','FinanceApplies.content','FinanceApplies.id','FinanceApplies.user_id']
@@ -292,11 +288,27 @@ class DashboardController extends AppController
 
                     $resp = [];
                     $resp['id'] = $task->id;
-                    $resp['title'] = '申请原因：' . $query->content . '</br>申请金额：' . $query->amount;
-                    $resp['url'] = '/finances/add/' . $tasks->id;
+                    $resp['title'] = '申请原因：' . $query->content . '，申请金额：' . $query->amount;
+                    $resp['url'] = '/finances/add/' . $task->id;
                     $resp['class'] = 'event-important';
                     $resp['start'] = time() . '000';
                     $resp['end'] = time() . '000';
+                    $respArr['result'][] = $resp;
+                break;
+
+                case 'Notes':
+                    $this->loadModel('Users');
+                    $query = $this->Notes->get($task->itemid,[
+                        'fields' => ['Notes.name','Notes.start_time','Notes.end_time']
+                    ]);
+
+                    $resp = [];
+                    $resp['id'] = $task->id;
+                    $resp['title'] = $query->name;
+                    $resp['url'] = '/note/view/' . $query->id;
+                    $resp['class'] = 'event-info';
+                    $resp['start'] =$query->start_time->toUnixString() . '000';
+                    $resp['end'] = $query->end_time->toUnixString() . '000';
                     $respArr['result'][] = $resp;
                 break;
             }

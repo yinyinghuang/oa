@@ -59,7 +59,7 @@
                     <tr <?php if ($task->state == 0): ?>style="font-weight:600"<?php endif ?>>
                         <td><?= $this->Number->format($task->id) ?></td>
                         <td><?= $taskModelArr[$task->controller] ?></td>
-                        <td><?= $this->Html->link(__($task->item), $task->deal['url']) ?> </td>
+                        <td><?= $this->Html->link($task->item, $task->deal['url']) ?> </td>
                         <td><?= $this->Html->link(__($task->operator['username']), ['controller' => 'Users', 'action' => 'view', $task->operator['id']]) ?></td>
                         <td><?= h($task->modified) ?></td>
                     </tr>
@@ -89,6 +89,47 @@
         </div>
     </div>
 </div> -->
+<div class="col-md-6 col-sm-6 col-xs-12">   
+    <div class="x_panel">
+        <div class="x_title">
+            <h4>待办事项</h4>
+            <ul class="nav navbar-right panel_toolbox">
+                <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a></li>
+            </ul>
+            <div class="clearfix"></div>
+        </div>
+        <div class="x_content"> 
+            <div class="calendar-header">
+                <div class="pull-right form-inline">
+                    <div class="btn-group" style="width: 100%;padding: 0  0 10px">
+                        <span class="event event-warning" style="display: inline-block;"></span><span style="font-weight: 600">项目审核</span>
+                        <span class="event event-success" style="display: inline-block;"></span><span style="font-weight: 600">项目计划</span>
+                        <span class="event event-special" style="display: inline-block;"></span><span style="font-weight: 600">客户交易</span>
+                        <span class="event event-important" style="display: inline-block;"></span><span style="font-weight: 600">经费审核</span>
+                        <span class="event event-info" style="display: inline-block;"></span><span style="font-weight: 600">备忘录</span>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" data-calendar-nav="prev"><i class="fa fa-angle-left"></i></button>
+                        <button class="btn btn-default" data-calendar-nav="today">今天</button>
+                        <button class="btn btn-primary" data-calendar-nav="next"><i class="fa fa-angle-right"></i></button>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-warning" data-calendar-view="year">年</button>
+                        <button class="btn btn-warning active" data-calendar-view="month">月</button>
+                        <button class="btn btn-warning" data-calendar-view="week">周</button>
+                        <button class="btn btn-warning" data-calendar-view="day">日</button>
+                    </div>
+                </div>
+                <h3><?= date('F') . ' ' . date('Y') ?></h3>
+                <div class="clearfix"></div>
+            </div>
+            <div id="calendar"></div>
+        </div>
+        <?php if ($countProjects > 5): ?>
+           <a class="btn btn-primary pull-right" href="<?= $this->Url->build(['controller' => 'Projects', 'action' => 'index']) ?>">更多</a> 
+        <?php endif ?>
+    </div>    
+</div>
 <div class="col-md-6 col-sm-6 col-xs-12">   
     <div class="x_panel">
         <div class="x_title">
@@ -145,46 +186,7 @@
 </div>
 <div class="clearfix"></div>   
 
-<div class="col-md-6 col-sm-6 col-xs-12">   
-    <div class="x_panel">
-        <div class="x_title">
-            <h4>我的网盘</h4>
-            <ul class="nav navbar-right panel_toolbox">
-                <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a></li>
-            </ul>
-            <div class="clearfix"></div>
-        </div>
-        <div class="x_content"> 
-            <div class="calendar-header">
-                <div class="pull-right form-inline">
-                    <div class="btn-group" style="width: 100%;padding: 0  0 10px">
-                        <span class="event event-warning" style="display: inline-block;"></span><span style="font-weight: 600">项目审核</span>
-                        <span class="event event-success" style="display: inline-block;"></span><span style="font-weight: 600">项目计划</span>
-                        <span class="event event-special" style="display: inline-block;"></span><span style="font-weight: 600">客户交易</span>
-                        <span class="event event-important" style="display: inline-block;"></span><span style="font-weight: 600">经费审核</span>
-                    </div>
-                    <div class="btn-group">
-                        <button class="btn btn-primary" data-calendar-nav="prev">&lt;&lt; Prev</button>
-                        <button class="btn btn-default" data-calendar-nav="today">Today</button>
-                        <button class="btn btn-primary" data-calendar-nav="next">Next &gt;&gt;</button>
-                    </div>
-                    <div class="btn-group">
-                        <button class="btn btn-warning" data-calendar-view="year">Year</button>
-                        <button class="btn btn-warning active" data-calendar-view="month">Month</button>
-                        <button class="btn btn-warning" data-calendar-view="week">Week</button>
-                        <button class="btn btn-warning" data-calendar-view="day">Day</button>
-                    </div>
-                </div>
-                <h3><?= date('F') . ' ' . date('Y') ?></h3>
-                <div class="clearfix"></div>
-            </div>
-            <div id="calendar"></div>
-        </div>
-        <?php if ($countProjects > 5): ?>
-           <a class="btn btn-primary pull-right" href="<?= $this->Url->build(['controller' => 'Projects', 'action' => 'index']) ?>">更多</a> 
-        <?php endif ?>
-    </div>    
-</div>
+
 <div class="col-md-6 col-sm-6 col-xs-12">   
     <div class="x_panel">
         <div class="x_title">
@@ -318,12 +320,42 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h3>新任务</h3>
+                    <h3>备忘录</h3>
                 </div>
-                <div class="modal-body" style="height: 400px">
+                <div class="modal-body">
+                    <form class="form-horizontal" id="newTask">
+                        <input type="hidden" name="user_id" value="<?= $this->request->session()->read('Auth')['User']['id'] ?>">
+                        <div class="form-group required">
+                            <label class="control-label col-md-3 col-sm-3 col-xs-12">名称</label>
+                            <div class="col-md-6 col-sm-6 col-xs-12">
+                                <input type="text" name="name" required id="name">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-3 col-sm-3 col-xs-12">描述</label>
+                            <div class="col-md-6 col-sm-6 col-xs-12">
+                                <textarea name="descp" id="" cols="30" rows="5"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group required">
+                            <label class="control-label col-md-3 col-sm-3 col-xs-12">日期</label>
+                            <div class="col-md-6 col-sm-6 col-xs-12">
+                                <div class="input-group">
+                                    <input type="text" name="start_time" required readonly="readonly" class="form-control datetimepicker" id="start-time">
+                                    <span class="input-group-addon">至</span>
+                                    <input type="text" name="end_time" required readonly="readonly" class="form-control datetimepicker" id="end-time">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div id="uploadSuccess" class="col-md-offset-3 col-sm-offset-3 col-md-9 col-sm-9 col-xs-12"></div>
+                            <div id="uploadError" class="col-md-offset-3 col-sm-offset-3 col-md-9 col-sm-9 col-xs-12"></div>
+                        </div>
+                    </form>
                 </div>
                 <div class="modal-footer">
                     <a href="#" data-dismiss="modal" class="btn">关闭</a>
+                    <button type="button" class="btn btn-primary" id="upload">上传</button>
                 </div>
             </div>
         </div>
@@ -344,10 +376,18 @@
     $('#rejected').on('click', function(){
         $('#state').val(0);
     });
+    $('.datetimepicker').daterangepicker({
+        "calender_style" : "picker_3",
+        "singleDatePicker" : true,
+        "format" : "YYYY-MM-DD",
+        'minDate' : moment(),
+      }, function(start, end, label) {
+    });
     var options = {
             events_source: '/dashboard/get-task',
             view: 'month',
             tmpl_path: '/js/vendors/bootstrap-calendar/tmpls/',
+            view: 'day',
             tmpl_cache: false,
             time_start: '09:00',
             time_end: '22:00',
@@ -395,28 +435,78 @@
             calendar.view($this.data('calendar-view'));
         });
     });
-    // var timeOutEvent = 0;
-    // $('.cal-cell1').on({
-    //     contextmenu : addTask,
-    //     // touchstart : function(e){
-    //     //     timeOutEvent = setTimeout(addTask,1000);
-    //     //     e.preventDefault();
-    //     // },
-    //     // touchmove : function(e){
-    //     //     clearTimeout(timeOutEvent); 
-    //     //     timeOutEvent = 0;
-    //     // },
-    //     // touchend : function(e){
-    //     //     clearTimeout(timeOutEvent); 
-    //     //     timeOutEvent = 0;
-    //     // }
+    
+    //PC右键，移动长按 新建备忘录
+    var timeOutEvent = 0;
+    $('.cal-cell1').on({
+        contextmenu : addTask,
+        touchstart : function(e){
+            timeOutEvent = setTimeout(addTask,1000);
+            // e.preventDefault();
+        },
+        touchmove : function(e){
+            clearTimeout(timeOutEvent); 
+            timeOutEvent = 0;
+        },
+        touchend : function(e){
+            clearTimeout(timeOutEvent); 
+            timeOutEvent = 0;
+        }
 
-    // });
+    });
     function addTask(){
         timeOutEvent = 0; 
         $('#modal-trigger').click();
+        $('#name').focus();
         return false;
     }
+    $('#upload').on('click', function(){ 
+        if ($('#start-time').val() > $('#end-time').val()) {
+            new PNotify({
+                title: '錯誤',
+                text: '开始时间不能晚于结束时间',
+                type: 'error',
+                styling: 'bootstrap3',
+                delay: 3000,
+                width:'280px'
+            });
+            return false;
+        }              
+        var formData = $('#newTask').serialize(),
+            success  = $('#uploadSuccess'),
+            error = $('#uploadError'),
+            data = {};
+        formData = formData.split('&');
+
+        formData.forEach(function(value){
+            value = value.split('=');
+            if(value) {
+                data[value[0]] = value[1];
+            }
+        });
+
+        $.ajax({
+            type : 'post',
+            url : '/tasks/add-note',
+            data : data,
+            success : function(data){
+                if(data == 1){
+                    success.html('备忘录添加成功');
+                    error.html('');
+                    setTimeout(function(){
+                        $('#close').click();
+                    },1000);
+                }else{
+                    success.html('');
+                    error.html('备忘录添加失败，请重试');
+                }
+            },
+            error : function(data){
+                alert(data.responseText);
+            }
+        });
+    });
+
   });
 </script> 
 <?= $this->end() ?>

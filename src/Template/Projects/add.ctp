@@ -124,7 +124,7 @@
                 cache: false,
                 processData: false,
                 contentType: false,
-                success : function(data){console.log(data);
+                success : function(data){
                     data = JSON.parse(data);
                     if(data.result){
                         $('#attachment').val(data.url);
@@ -165,7 +165,7 @@
                 "calender_style": "picker_3",
                 "singleDatePicker": true,
                 'minDate' : moment(),
-                "format" : "YYYY-MM-DD HH:mm",
+                "format" : "YYYY-MM-DD",
               }, function(start, end, label) {
             });
             if (!document.getElementById('del')) {
@@ -193,7 +193,7 @@
           }
         });
         $('#auditorInput').autocomplete({
-          serviceUrl: url + 'type=auditor',
+          serviceUrl: url + '?type=auditor',
           onSelect: function(suggestion) {
               $('#auditor').val(suggestion.data);
           },

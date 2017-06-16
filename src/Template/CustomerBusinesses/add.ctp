@@ -12,7 +12,7 @@
             echo $this->Form->control('customer_id', ['type' => 'hidden', 'value' => $customer_id]);
             echo $this->Form->control('content', ['type' => 'textarea', 'label' => '内容']);
         ?>
-        <div class="input form-group">
+        <div class="input form-group" style="margin-top: 8px;">
             <label class="col-md-2 col-xs-12">活動日期</label>
             <div class="col-md-6 col-xs-12">
                 <div class="input-group">
@@ -22,8 +22,19 @@
                 </div>
             </div> 
         </div>
+        <div class="clearfix"></div>
+        <div class="input form-group">
+            <input type="checkbox" name="notice" id="notice">
+            <label for="notice">通知</label>
+        </div>
+        <div class="input form-group" style="display: none;" id="recipient-field">
+            <input type="hidden" id="recipientIds">
+            <label for="recipient">通知对象</label>
+            <input type="text" name="recipient" id="recipient">
+            <div id="recipients"></div>
+        </div>
     </fieldset>
-    <?= $this->Form->button(__('提交'),['class' => ['btn', 'btn-primary', 'pull-right']]) ?>
+    <?= $this->Form->button(__('提交'),['class' => ['btn', 'btn-primary', 'pull-right'], 'id' => 'submit']) ?>
     <?= $this->Form->end() ?>
 </div>
 <div class="clearfix"></div>
@@ -39,6 +50,39 @@
             'timePicker12Hour' : false
           }, function(start, end, label) {
         });
-    })
+
+        $('input[name="notice"]').on('change', function(){
+            if(this.checked) {
+                $('#recipient-field').slideDown();
+            } else {
+                $('#recipient-field').slideUp();
+            }
+        });
+        
+        var url = window.location.origin + '/customers/get-users/',
+            recipients = $('#recipients');
+
+        $('#recipient').autocomplete({
+          serviceUrl: url,
+          onSelect: function(suggestion) {
+            var recipientIds = $('#recipientIds');
+            recipientIds.val(recipientIds.val() + suggestion.data + ',');
+            recipients.append('<span><label class="label">'+suggestion.value+'</label><i class="fa fa-trash" style="margin-left:6px;" onClick="deleteReci(this,'+suggestion.data+')"></i></span>');
+            this.value = ''
+          }
+        });
+    });
+    function deleteReci(node,id){
+        var recipientIds = $('#recipientIds'),
+            ids = recipientIds.val().split(',');
+        ids.forEach(function(value,index){
+            if(value == id){
+                ids.splice(index,1);
+                $(node).parent('span').remove();
+                recipientIds.val(ids);
+                return;
+            }
+        });
+    }
 </script>
 <?= $this->end() ?>

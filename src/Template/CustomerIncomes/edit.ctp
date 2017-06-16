@@ -60,7 +60,7 @@
 <?= $this->start('script') ?>
 <script type="text/javascript">
   $(function(){
-    $('#attachment').on('click',function(){
+    $('#file').on('click',function(){
         $('#submit').attr('disabled', false);
     });
     $('#submit').on('click', function(){               

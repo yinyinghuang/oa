@@ -62,7 +62,7 @@ class CustomerBusinessesController extends AppController
         if ($this->request->is('post')) {
             $customerBusiness = $this->CustomerBusinesses->patchEntity($customerBusiness, $this->request->getData());
             if ($this->CustomerBusinesses->save($customerBusiness)) {
-                
+                //若存在时间期限，则加入任务列表
                 if ($this->request->getData('end_time')) {
                     $this->loadModel('Tasks');
                     $task = $this->Tasks->newEntity();
@@ -71,6 +71,22 @@ class CustomerBusinessesController extends AppController
                     $task->user_id = $customerBusiness->user_id;
                     $task->state = 0;
                     $this->Tasks->save($task);
+                }
+                //通知相关人员
+                if ($this->request->getData('notice') == 'on' && $this->request->getData('recipientIds') != '') {
+                    $this->loadModel('Notices');
+                    $recipientIds = $this->request->getData('recipientIds');
+                    $recipientIds = explode(',', substr($recipientIds, 0, strlen($recipientIds)-1));
+                    foreach ($recipientIds as $key => $recipientId) {
+                        $notices[$key] = [
+                            'controller' => 'CustomerBusinesses',
+                            'itemid' => $customerBusiness->id,
+                            'user_id' => $recipientId,
+                            'state' => 0
+                        ];
+                    }
+                    $notices = $this->Notices->newEntities($notices);
+                    $this->Notices->saveMany($notices);
                 }
                 $this->loadModel('Customers');
                 $customer = $this->Customers->get($customer_id);

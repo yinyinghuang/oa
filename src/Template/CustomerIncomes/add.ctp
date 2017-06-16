@@ -74,7 +74,7 @@
       }
     });
     <?php endif ;?>
-    $('#attachment').on('click',function(){
+    $('#file').on('click',function(){
         $('#upload').attr('disabled', false);
     });
     $('#upload').on('click', function(){               

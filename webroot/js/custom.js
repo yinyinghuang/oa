@@ -41,7 +41,7 @@
 
 var CURRENT_URL = window.location.href.split('?')[0],
     $BODY = $('body'),
-    $MENU_TOGGLE = $('#menu_toggle'),
+    $MENU_TOGGLE = $('.menu_toggle'),
     $SIDEBAR_MENU = $('#sidebar-menu'),
     $SIDEBAR_FOOTER = $('.sidebar-footer'),
     $LEFT_COL = $('.left_col'),
@@ -295,36 +295,80 @@ $SEARCH.on('click', function(){
         $SEARCH_BOX.slideUp();
     }
 });
-
 // $('body').on('touchstart', function(e) {
 //     var touch = e.originalEvent,
 //         startX = touch.changedTouches[0].pageX,
 //         startY = touch.changedTouches[0].pageY;
 //     $(this).on('touchmove', function(e) {
-//         // 判断默认行为是否可以被禁用
-//         if (e.cancelable) {
-//             // 判断默认行为是否已经被禁用
-//             if (!e.defaultPrevented) {
-//                 e.preventDefault();
-//             }
-//         }
+        
 //         touch = e.originalEvent.touches[0] ||
 //             e.originalEvent.changedTouches[0];
-//         if (touch.pageX - startX > 80) {//右划显示侧栏
-//             if ($BODY.hasClass('nav-md')) {
-//                 $BODY.attr('class','nav-sm');
-//                 $SIDEBAR_MENU.find('li.active-sm ul').show();
-//                 $SIDEBAR_MENU.find('li.active-sm').addClass('active').removeClass('active-sm');
+//         delX = touch.pageX - startX;
+//         delY = touch.pageY - startY;
+//         if (Math.abs(delX) > Math.abs(delY)) {
+//             if (delX > 150) {//右划显示侧栏
+//                 if ($BODY.hasClass('nav-md')) {
+//                     $BODY.attr('class','nav-sm');
+//                     $SIDEBAR_MENU.find('li.active-sm ul').show();
+//                     $SIDEBAR_MENU.find('li.active-sm').addClass('active').removeClass('active-sm');
+//                 }
+//             } else if (delX < - 150) {//左划隐藏侧栏
+//                 if ($BODY.hasClass('nav-sm')) {
+//                     $BODY.attr('class','nav-md');
+//                     $SIDEBAR_MENU.find('li.active ul').hide();
+//                     $SIDEBAR_MENU.find('li.active').addClass('active-sm').removeClass('active');
+//                 }
 //             }
-//         } else if (touch.pageX - startX < -80) {//左划隐藏侧栏
-//             if ($BODY.hasClass('nav-sm')) {
-//                 $BODY.attr('class','nav-md');
-//                 $SIDEBAR_MENU.find('li.active ul').hide();
-//                 $SIDEBAR_MENU.find('li.active').addClass('active-sm').removeClass('active');
-//             }
-//         } else if (Math.abs(touch.pageY - startY) > 50) {//左划隐藏侧栏
-            
-//         };
+//         }
+        
 //     });
-//     return false;
 // });
+
+var toggle;
+        $(document).on('visibilitychange', function () {
+            
+            if(!document.hidden) {//页面切换为可见时，获取最新消息及任务
+              if ((new Date() - toggle)/1000 > 60) {
+                $.ajax({
+                  type : 'post',
+                  url : '/tasks/get-new',
+                  data : {
+                    time : toggle
+                  },
+                  success: function(data){
+                    data = JSON.parse(data);
+
+                    for(var i in data.notices) {
+                      var cur = data.notices[i]; 
+                      new PNotify({
+                          title: '通知<small class="pull-right" style="color:#fff">' + cur.model + '<small>',
+                          text: '<a href="' + cur.deal.url + '" style="color:#fff">' + cur.item + '</a>',
+                          icon: 'glyphicon glyphicon-envelope',
+                          type: 'info',
+                          styling: 'bootstrap3',
+                          delay: 3000,
+                          width:'280px'
+                      });
+                    }
+                    for(var i in data.tasks) {
+                      var cur = data.tasks[i]; 
+                      new PNotify({
+                          title: '任务<small class="pull-right" style="color:#fff">' + cur.model + '<small>',
+                          text: '<a href="' + cur.deal.url + '" style="color:#fff">' + cur.item + '</a>',
+                          icon: 'glyphicon glyphicon-tasks',
+                          type: 'notice',
+                          styling: 'bootstrap3',
+                          delay: 3000,
+                          width:'280px'
+                      });
+                    }
+                  },
+                  error : function(){
+
+                  }
+                });
+              }
+            } else {//记录窗口不可见时间
+              toggle = new Date();
+            }
+        });

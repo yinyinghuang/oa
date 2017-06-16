@@ -85,11 +85,11 @@ class CustomersTable extends Table
         $validator
             ->integer('country_code')
             ->requirePresence('country_code', 'create')
-            ->notEmpty('country_code');
+            ->allowEmpty('country_code');
 
         $validator
             ->requirePresence('mobile', 'create')
-            ->notEmpty('mobile');
+            ->allowEmpty('mobile');
 
         $validator
             ->email('email')

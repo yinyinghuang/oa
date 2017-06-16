@@ -75,11 +75,12 @@
     <table cellpadding="0" cellspacing="0">
         <thead>
             <tr>
-                <th scope="col"><?= $this->Paginator->sort('id') ?></th>
+                <th scope="col" width="40"><?= $this->Paginator->sort('id') ?></th>
                 <th scope="col"><?= $this->Paginator->sort('customer_category_id', ['分类']) ?></th>
                 <th scope="col"><?= $this->Paginator->sort('name', ['姓名']) ?></th>
                 <th scope="col" class="hidden-xs"><?= $this->Paginator->sort('mobile', ['手机']) ?></th>
                 <th scope="col" class="hidden-xs"><?= $this->Paginator->sort('email', ['电邮']) ?></th>
+                <th scope="col"><?= __('备注') ?></th>
                 <th scope="col" class="actions"><?= __('Actions') ?></th>
             </tr>
         </thead>
@@ -91,6 +92,7 @@
                 <td><?= h($customer->name) ?></td>
                 <td class="hidden-xs"><a href="tel:<?= '+' . $customer->country_code . '-' . $customer->mobile?>"><?= '+' . $customer->country_code . '-' . $customer->mobile?></a></td>
                 <td class="hidden-xs"><?= $customer->email ?></td>
+                <td><?= $customer->remark ?></td>
                 <td class="actions">
                     <?= $this->Html->link(__('View'), ['action' => 'view', $customer->id]) ?>
                     <?= $this->Html->link(__('Edit'), ['action' => 'edit', $customer->id]) ?>

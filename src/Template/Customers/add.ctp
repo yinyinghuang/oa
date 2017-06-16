@@ -19,7 +19,7 @@
             echo $this->Form->control('customer_category', ['options' => $customerCategories, 'empty' => '请选择', 'class' => 'parent_id', 'required' => true, 'label' => '客户分类']);
             echo $this->Form->control('name',['label' => '姓名']);
             echo $this->Form->control('company',['label' => '公司']);
-            echo $this->Form->control('country_code',['label' => '国际区号']);
+            echo $this->Form->control('country_code',['label' => '国际区号','maxlength' => 5,'type' => 'text']);
             echo $this->Form->control('mobile',['label' => '电话']);
             echo $this->Form->control('email',['label' => '电邮']);
             echo $this->Form->control('position',['label' => '职位']);
@@ -42,13 +42,13 @@
         if (node.value == 0 && $(node).prev('select').length > 0) {
             parent_id.val($(node).prev('select').val());
         } else {
-             parent_id.val(node.value);
+            parent_id.val(node.value);
         }
         $(node).nextAll('select').remove();
         if(node.value !== ''){
             var that = node;
             $.ajax({
-                type : 'get',
+                type : 'post',
                 url : '<?= $this->Url->build(['controller' => 'CustomerCategories', 'action' => 'loadChilds'])?>',
                 data : {
                     parent_id : node.value,
@@ -63,7 +63,6 @@
                         }
                         html += '</select>';
                         html = $(html);
-                        html.on('change', loadCatogeries);
                         $(that).after(html);                            
                     }
                     if (data.options.length != 0) {

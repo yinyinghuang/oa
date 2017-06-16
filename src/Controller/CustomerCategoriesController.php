@@ -414,11 +414,12 @@ class CustomerCategoriesController extends AppController
     public function loadChilds()
     {
         $data = array();
-        if ($this->request->query('parent_id') !== '') {
-            $data['child'] = $this->CustomerCategories->ParentCustomerCategories->find('list', ['limit' => 200])->where(['parent_id' => $this->request->query('parent_id')]);
+        if ($this->request->getData('parent_id') !== '') {
+            $data['child'] = $this->CustomerCategories->ParentCustomerCategories->find('list', ['limit' => 200])->where(['parent_id' => $this->request->getData('parent_id')]);
             
             if (isset($_POST['option']) && $_POST['option'] == 1) {
-                $data['options'] = $this->CustomerCategories->CustomerCategoryOptions->find('all')->where(['customer_category_id' => $this->request->query('parent_id')]);
+
+                $data['options'] = $this->CustomerCategories->CustomerCategoryOptions->find('all')->where(['customer_category_id' => $this->request->getData('parent_id')]);
             }            
         }
 

@@ -40,7 +40,7 @@ class FinancesController extends AppController
         $this->Notices->query()
             ->update()
             ->set(['state' => 1])
-            ->where(['user_id' => $_user['id'], 'controller' => 'Finances','state' => 1])
+            ->where(['user_id' => $_user['id'], 'controller' => 'Finances','state' => 0])
             ->execute();
 
         $this->set(compact('finances','search'));
@@ -88,11 +88,15 @@ class FinancesController extends AppController
             $task->state = 1;
             $this->Tasks->save($task);
         }
-        $balance = $this->FinanceBalances->findByUserId($_user['id'])->first();
-        if(!$balance || $balance->balance == 0) {
-            $this->Flash->error(__('你的账户余额不足,请申请'));
-            $this->redirect(['action' => 'apply']);
-        }
+        $this->loadModel('UserDepartmentRoles');
+        // $roleMax = $this->UserDepartmentRoles->findByUserId($_user['id'])->group('role_id')->max('role_id')->role_id;
+        // if ($roleMax != 4) {
+            $balance = $this->FinanceBalances->findByUserId($_user['id'])->first();
+            if(!$balance || $balance->balance == 0) {
+                $this->Flash->error(__('你的账户余额不足,请申请'));
+                $this->redirect(['action' => 'apply']);
+            }
+        // }
         $finance = $this->Finances->newEntity();
         if ($this->request->is('post')) {
             $amount = intval($this->request->getData('amount'));
@@ -168,7 +172,7 @@ class FinancesController extends AppController
             ]);
         }
         $financeTypes = $this->Finances->FinanceTypes->find('list');
-        $this->set(compact('finance', 'financeTypes','balance','task'));
+        $this->set(compact('finance', 'financeTypes','balance','task','roleMax'));
         $this->set('_serialize', ['finance']);
     }
 

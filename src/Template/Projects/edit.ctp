@@ -177,7 +177,7 @@
             $('.datetimepicker').daterangepicker({
                 "calender_style": "picker_3",
                 "singleDatePicker": true,
-                "format" : "YYYY-MM-DD HH:mm",
+                "format" : "YYYY-MM-DD",
               }, function(start, end, label) {
             });
             num.val(i);

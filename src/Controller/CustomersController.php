@@ -348,4 +348,30 @@ class CustomersController extends AppController
         $this->set('_serialize', ['customers']);
         $this->render('index');
     }
+
+    public function getUsers(){
+        $userArr = $data = [];
+        
+        $username = $this->request->query('query');
+        $conditions = [
+            'username LIKE ' => '%' . $username . '%',
+            'id != ' => $this->request->session()->read('Auth')['User']['id']
+        ];
+        $query = $this->Customers->Users->find('all',[
+            'conditions' => $conditions,
+            'fields' => ['Users.id','Users.username']
+        ]);
+        foreach ($query as $user) {
+            $dataArr = [];
+            $dataArr['value'] = $user->username;
+            $dataArr['data'] = $user->id;
+            $userArr[] = $dataArr;
+        }
+        $data = [
+            "query" => "Unit",
+            "suggestions" => $userArr,
+        ];
+        $this->response->body(json_encode($data));
+        return $this->response;
+    }
 }

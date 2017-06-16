@@ -691,6 +691,7 @@ class ProjectsController extends AppController
         ];
         $this->response->body(json_encode($data));
         return $this->response;
+
     }
     public function deleteSchedule()
     {

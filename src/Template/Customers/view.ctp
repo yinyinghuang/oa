@@ -8,8 +8,8 @@
         <li class="heading"><?= __('Actions') ?></li>
         <li><?= $this->Html->link(__('新增日志'), ['controller' => 'CustomerBusinesses', 'action' => 'add', $customer->id]) ?> </li>
         <li><?= $this->Html->link(__('新增收益'), ['controller' => 'CustomerIncomes', 'action' => 'add', $customer->id]) ?> </li>
-        <li><?= $this->Html->link(__('编辑客户'), ['action' => 'edit', $customer->id]) ?> </li>
-        <li><?= $this->Form->postLink(__('删除客户'), ['action' => 'delete', $customer->id], ['confirm' => __('Are you sure you want to delete {0}?', $customer->name)]) ?> </li>
+        <li><?= $this->Html->link(__('编辑'), ['action' => 'edit', $customer->id]) ?> </li>
+        <li><?= $this->Form->postLink(__('删除'), ['action' => 'delete', $customer->id], ['confirm' => __('Are you sure you want to delete {0}?', $customer->name)]) ?> </li>
         <li><?= $this->Html->link(__('客户列表'), ['action' => 'index']) ?> </li>
         <li><?= $this->Html->link(__('新增客户'), ['action' => 'add']) ?> </li>
     </ul>
@@ -65,11 +65,11 @@
                 </tr>
                 <?php endforeach ?>
                 <tr>
-                    <th scope="row"><?= __('Created') ?></th>
+                    <th scope="row"><?= __('创建时间') ?></th>
                     <td><?= h($customer->created) ?></td>
                 </tr>
                 <tr>
-                    <th scope="row"><?= __('Modified') ?></th>
+                    <th scope="row"><?= __('更新时间') ?></th>
                     <td><?= h($customer->modified) ?></td>
                 </tr>
             </table>
@@ -123,6 +123,7 @@
                         <?php if ($customerBusinesses->end_time || $customerBusinesses->start_time): ?>
                         <div class="col-xs-12"><i class="fa fa-clock-o"></i>活动时间：<?= $customerBusinesses->start_time  . '至' . $customerBusinesses->start_time?></div>   
                         <?php endif ?>
+                        <div class="clearfix"></div>
                         <div class="col-xs-6 action">
                             <?= $this->Html->link(__('View'), ['controller' => 'CustomerBusinesses','action' => 'view', $customerBusinesses->id],['class' => 'col-xs-4']) ?>
                             <?= $this->Html->link(__('Edit'), ['controller' => 'CustomerBusinesses','action' => 'edit', $customerBusinesses->id],['class' => 'col-xs-4']) ?>

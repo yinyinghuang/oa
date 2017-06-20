@@ -67,7 +67,7 @@
                 <button class="btn btn-primary">搜索</button>
             </div>
             <div class="col-md-2">
-                <a class="btn btn-default" href="<?= $this->Url->build(['action' => 'index',1]) ?>">重置</a>
+                <a class="btn btn-default" href="<?= $this->Url->build(['action' => 'index','reset' => 1]) ?>">重置</a>
             </div>
         </div>
         </form>
@@ -80,6 +80,11 @@
                 <th scope="col"><?= $this->Paginator->sort('name', ['姓名']) ?></th>
                 <th scope="col" class="hidden-xs"><?= $this->Paginator->sort('mobile', ['手机']) ?></th>
                 <th scope="col" class="hidden-xs"><?= $this->Paginator->sort('email', ['电邮']) ?></th>
+                <?php if (isset($extraFonts)): ?>
+                    <?php foreach ($extraFonts as $font): ?>
+                    <th scope="col"><?= __($font) ?></th>   
+                    <?php endforeach ?>   
+                <?php endif ?>                
                 <th scope="col"><?= __('备注') ?></th>
                 <th scope="col" class="actions"><?= __('Actions') ?></th>
             </tr>
@@ -92,6 +97,12 @@
                 <td><?= h($customer->name) ?></td>
                 <td class="hidden-xs"><a href="tel:<?= '+' . $customer->country_code . '-' . $customer->mobile?>"><?= '+' . $customer->country_code . '-' . $customer->mobile?></a></td>
                 <td class="hidden-xs"><?= $customer->email ?></td>
+                <?php if (isset($extraFonts)): ?>
+                    <?php foreach ($extraFonts as $font): ?>
+                    <th scope="col"><?= __($font) ?></th>   
+                    <?php endforeach ?>    
+                <?php endif ?>
+                
                 <td><?= $customer->remark ?></td>
                 <td class="actions">
                     <?= $this->Html->link(__('View'), ['action' => 'view', $customer->id]) ?>
@@ -138,7 +149,7 @@
         if(node.value !== ''){
             var that = node;
             $.ajax({
-                type : 'get',
+                type : 'post',
                 url : '<?= $this->Url->build(['controller' => 'CustomerCategories', 'action' => 'loadChilds'])?>',
                 data : {
                     parent_id : node.value
@@ -152,7 +163,6 @@
                         }
                         html += '</select>';
                         html = $(html);
-                        html.on('change', loadCatogeries);
                         $(that).after(html);                            
                     }
                 }

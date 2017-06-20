@@ -45,6 +45,14 @@
         <tr>
             <th scope="row"><?= __('必填') ?></th>
             <td><?= $option->required ? __('是') : __('否') ?></td>
+        </tr> 
+        <tr>
+            <th scope="row"><?= __('首页可见栏位') ?></th>
+            <td><?= $option->font ? __('是') : __('否') ?></td>
+        </tr> 
+        <tr>
+            <th scope="row"><?= __('搜索栏可见') ?></th>
+            <td><?= $option->searchable ? __('是') : __('否') ?></td>
         </tr>  
 
         <?php endforeach ?>

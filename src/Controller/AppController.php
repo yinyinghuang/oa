@@ -141,6 +141,7 @@ class AppController extends Controller
             // if file type ok upload the file
             if ($typeOK) {
                 // switch based on error code
+                $filename = iconv('utf-8','gb2312',$filename);
                 switch ($file['error']) {
                     case 0:
                         // check filename already exists
@@ -149,14 +150,14 @@ class AppController extends Controller
                             $full_url = $folder_url . '/' . $filename;
                             $url = $rel_url . '/' . $filename;
                             // upload the file
-                            $success = move_uploaded_file($file['tmp_name'], $url);
+                            $success = move_uploaded_file($file['tmp_name'], $full_url);
                         } else {
                             // create unique filename and upload file
                             ini_set('date.timezone', 'Europe/London');
                             $now = date('Y-m-d-His');
                             $full_url = $folder_url . '/' . $now . $filename;
                             $url = $rel_url . '/' . $now . $filename;
-                            $success = move_uploaded_file($file['tmp_name'], $url);
+                            $success = move_uploaded_file($file['tmp_name'], $full_url);
                         }
                         // if upload was successful
                         if ($success) {

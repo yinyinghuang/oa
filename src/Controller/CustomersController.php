@@ -18,7 +18,7 @@ class CustomersController extends AppController
      *
      * @return \Cake\Http\Response|null
      */
-    public function index($reset = null)
+    public function index()
     {
         $this->paginate = [
             'contain' => ['CustomerCategories' => function($q){
@@ -27,7 +27,7 @@ class CustomersController extends AppController
             'order' => ['Customers.modified' => 'Desc']
         ];
         $customers = $this->paginate($this->Customers);
-        $search = $reset ? 1 : 0;
+        $search = $this->request->query('reset') ? 1 : 0;
         $customer_category_id = 0;
 
         $list = $this->Customers->CustomerCategories->find('list', ['conditions' => ['parent_id' => 0]]);
@@ -206,7 +206,7 @@ class CustomersController extends AppController
                 require_once(ROOT . DS  . 'vendor' . DS  . 'PHPExcel' . DS . 'Classes' . DS . 'PHPExcel.php');
                 require_once(ROOT . DS  . 'vendor' . DS  . 'PHPExcel' . DS . 'Classes' . DS . 'PHPExcel' . DS . 'IOFactory.php');
 
-                $reader = \PHPExcel_IOFactory::load($fileOK['urls'][0]);
+                $reader = \PHPExcel_IOFactory::load(WWW_ROOT . $fileOK['urls'][0]);
                 $objWorksheet = $reader->getActiveSheet()->toArray(null,true,true,true);
                 
                 $countRow = 1;
@@ -298,7 +298,7 @@ class CustomersController extends AppController
         {
             $customer_category_id = intval($_GET['customer_category_id']);
             if (intval($customer_category_id) != 0) {
-                $results = $this->Customers->CustomerCategories->find('path', ['for' => $customer_category_id]);            
+                $results = $this->Customers->CustomerCategories->find('path', ['for' => $customer_category_id]);
 
                 foreach ($results as $value) {            
                     $list = $this->Customers->CustomerCategories->find('list', ['conditions' => ['parent_id' => $value->parent_id]]);
@@ -318,6 +318,12 @@ class CustomersController extends AppController
                     $childrenArr[] = $value->id;
                 }
                 $sWhere['customer_category_id in '] = $childrenArr;
+                $category = $this->Customers->CustomerCategories->get($customer_category_id, ['contain' => 'CustomerCategoryOptions']);
+                $extraFonts = $extraSearch = [];
+                foreach ($category->customer_category_options as $option) {
+                    $option->font && $extraFonts[] = $option->name;
+                    $option->searchable && $extraSearch['option_' . $option->id] = $option->name;
+                }
             } else {
                 $list = $this->Customers->CustomerCategories->find('list', ['conditions' => ['parent_id' => 0]]);
                 $arr = array();
@@ -337,14 +343,14 @@ class CustomersController extends AppController
         $this->paginate = [
             'contain' => ['Users' => function($q){
                 return $q->select(['Users.username']);
-            }],
+            },'CustomerCategories','CustomerCategoryValues'],
             'order' => ['Customers.modified Desc'],
             'limit' => '10',
             'conditions' => $sWhere
         ];
         $customers = $this->paginate($this->Customers);
         $search = 1;
-        $this->set(compact('customers','name','username','mobile','email','start_modified','end_modified','customer_category_id','search','customerCategories'));
+        $this->set(compact('customers','name','username','mobile','email','start_modified','end_modified','customer_category_id','search','customerCategories','extraFonts','extraSearch'));
         $this->set('_serialize', ['customers']);
         $this->render('index');
     }

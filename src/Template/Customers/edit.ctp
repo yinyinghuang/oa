@@ -98,7 +98,7 @@
         if(node.value !== ''){
             var that = node;
             $.ajax({
-                type : 'get',
+                type : 'post',
                 url : '<?= $this->Url->build(['controller' => 'CustomerCategories', 'action' => 'loadChilds'])?>',
                 data : {
                     parent_id : node.value,

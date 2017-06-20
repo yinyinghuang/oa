@@ -86,6 +86,8 @@ class CustomerCategoriesController extends AppController
                     $option->type = $this->request->getData('type_' . $i);
                     $option->value = $this->request->getData('value_' . $i);
                     $option->required = $this->request->getData('required_' . $i);
+                    $option->font = $this->request->getData('font_' . $i);
+                    $option->searchable = $this->request->getData('searchable_' . $i);
                     $this->CustomerCategories->CustomerCategoryOptions->save($option);
                 }
                 $this->example($customerCategory->id);
@@ -96,7 +98,7 @@ class CustomerCategoriesController extends AppController
             $this->Flash->error(__('The customer category could not be saved. Please, try again.'));
         }
         $parentCustomerCategories = $this->CustomerCategories->ParentCustomerCategories->find('list', [
-            'conditions' => ['parent_id' => $parent_id],
+            'conditions' => ['parent_id' => $parent_id === null ? 0 : $parent_id],
             'limit' => 200
         ]);
         $this->set(compact('customerCategory', 'parent_id','parentCustomerCategories'));
@@ -138,6 +140,8 @@ class CustomerCategoriesController extends AppController
                     $option->type = $this->request->getData('type_' . $i);
                     $option->value = $this->request->getData('value_' . $i);
                     $option->required = $this->request->getData('required_' . $i);
+                    $option->font = $this->request->getData('font_' . $i);
+                    $option->searchable = $this->request->getData('searchable_' . $i);
                     $this->CustomerCategories->CustomerCategoryOptions->save($option);
                 }
                 $this->example($id);

@@ -74,6 +74,16 @@ class CustomerCategoryOptionsTable extends Table
             ->requirePresence('required', 'create')
             ->notEmpty('required');
 
+        $validator
+            ->boolean('font')
+            ->requirePresence('font', 'create')
+            ->notEmpty('font');
+            
+        $validator
+            ->boolean('searchable')
+            ->requirePresence('searchable', 'create')
+            ->notEmpty('searchable');
+
         return $validator;
     }
 

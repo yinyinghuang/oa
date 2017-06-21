@@ -61,6 +61,29 @@
                 </div>
             </div>           
         </div>
+        <?php if (isset($extraSearch)): ?>
+            <?php foreach ($extraSearch as $key => $value): ?>
+                <div class="row form-group">
+                    <label class="col-md-2 col-xs-4"><?= $value['name'] ?></label>
+                    <div class="col-md-3 col-xs-8">
+                        <?php 
+                            switch ($value['control']) {
+                                case 'radio':
+                                    echo $this->Form->radio($key, $value['options'], ['value' => isset($$key) ? $$key : '']);
+                                break;
+                                case 'select':
+                                    echo $this->Form->select($key, $value['options'], ['value' => isset($$key) ? $$key : '', 'empty' => '请选择']);
+                                break;
+                                default:
+                                    echo $this->Form->control($key,['label' => false, 'div' => false, 'type' => $value['control'], 'value' => isset($$key) ? $$key : '']);
+                                break;
+                            }
+                             
+                        ?>
+                    </div>
+                </div>
+            <?php endforeach ?>
+        <?php endif ?>
         <div class="row form-group">
             
             <div class="col-md-2">
@@ -98,8 +121,8 @@
                 <td class="hidden-xs"><a href="tel:<?= '+' . $customer->country_code . '-' . $customer->mobile?>"><?= '+' . $customer->country_code . '-' . $customer->mobile?></a></td>
                 <td class="hidden-xs"><?= $customer->email ?></td>
                 <?php if (isset($extraFonts)): ?>
-                    <?php foreach ($extraFonts as $font): ?>
-                    <th scope="col"><?= __($font) ?></th>   
+                    <?php foreach ($extraFonts as $key => $font): ?>
+                    <td scope="col"><?= __($customer->customer_category_values[$key]) ?></td>   
                     <?php endforeach ?>    
                 <?php endif ?>
                 

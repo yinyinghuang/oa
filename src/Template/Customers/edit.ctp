@@ -35,35 +35,37 @@
             echo $this->Form->control('email',['label' => '电邮']);
             echo $this->Form->control('position',['label' => '职位']);
             echo '<div id="opiton-fields">';
-            foreach ($customer->customer_category_values as $value) {
-                switch ($value->customer_category_option['type']) {
+
+            foreach ($customer->customer_category_options as $value) {
+                if($value->extra_value_id) echo '<input type="hidden" name="value_' . $value->extra_value_id . '_id" value="' . $value->extra_value_id . '">';
+                switch ($value['type']) {
                     case 'text':
                     case 'textarea':
                         echo $this->Form->control('value_' . $value->id, [
-                            'type' => $value->customer_category_option['type'],
-                            'value' => $value->value ? $value->value : $value->customer_category_option['value'],
-                            'required' => $value->customer_category_option['required'],
-                            'label' => $value->customer_category_option['name']
+                            'type' => $value['type'],
+                            'value' => $value['extra_value'] ? $value['extra_value'] : $value['value'],
+                            'required' => $value['required'],
+                            'label' => $value['name']
                         ]);
                         break;
                     case 'select':
-                        $options = explode('|', $value->customer_category_option['value']);
-                        $required = $value->customer_category_option['required'] ? ' required' : '';
-                        echo '<div class="input select' . $required . '"><label for="value-' . $value->id . '">' . $value->customer_category_option['name'] . '</label><select id="value-' . $value->id . '" name="value_' . $value->id . '"' . $required . '><option value="">请选择</option>';
+                        $options = explode('|', $value['value']);
+                        $required = $value['required'] ? ' required' : '';
+                        echo '<div class="input select' . $required . '"><label for="value-' . $value->id . '">' . $value['name'] . '</label><select id="value-' . $value->id . '" name="value_' . $value->id . '"' . $required . '><option value="">请选择</option>';
                         foreach ($options as $option) {
                             echo '<option value="' . $option . '"';
-                            if($value->value == $option) echo ' selected';
+                            if($value['extra_value'] == $option) echo ' selected';
                             echo '>' . $option . '</option>';
                         }
                         echo '</select></div>';
                         break;
                     case 'checkbox':
-                        $options = explode('|', $value->customer_category_option['value']);
-                        $values = explode('|', $value->value);
-                        $required = $value->customer_category_option['required'] ? ' required' : '';
-                        echo '<div class="input' . $required . '"><label>' . $value->customer_category_option['name'] . '</label>';
+                        $options = explode('|', $value['value']);
+                        $values = explode('|', $value['extra_value']);
+                        $required = $value['required'] ? ' required' : '';
+                        echo '<div class="input' . $required . '"><label>' . $value['name'] . '</label>';
                         foreach ($options as $option) {
-                            echo '<label><input type="checkbox" name="value_' . $value->id . '[]"' . $required ;
+                            echo '<label><input type="checkbox" name="value_' . $value->id . '[]"';
                             if(in_array($option, $values)) echo ' checked';
                             echo ' value=' . $option . '>' . $option . '</label>';
                         }

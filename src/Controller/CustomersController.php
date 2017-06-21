@@ -132,18 +132,33 @@ class CustomersController extends AppController
             'contain' => ['CustomerCategoryValues' => function($q){
                 return $q->contain(['CustomerCategoryOptions']);
             }]
-        ]);
+        ]);        
+        $customer->customer_category_options = $this->Customers->CustomerCategories->CustomerCategoryOptions->find()
+            ->where(['customer_category_id' => $customer->customer_category_id]);
+        foreach ($customer->customer_category_options as $value) {
+            $query_extra = $this->Customers->CustomerCategoryValues->find()
+                ->where(['customer_id' =>$id, 'customer_category_option_id' => $value->id])
+                ->first();
+            
+            $value->extra_value = $query_extra ? $query_extra->value : '';
+            $value->extra_value_id = $query_extra ? $query_extra->id : '';
+        }
         if ($this->request->is(['patch', 'post', 'put'])) {
             $customer = $this->Customers->patchEntity($customer, $this->request->getData());
             if ($this->Customers->save($customer)) {
-                foreach ($customer->customer_category_values as $extra) {
-                    $content = $this->request->getData('value_' .$extra->id);
-                    $content = is_array($content) ? implode('|', $content) : $content;
-                    $value = $this->Customers->CustomerCategoryValues->newEntity();
-                    $value->id = $extra->id;
-                    $value->value = $content;
-                    $this->Customers->CustomerCategoryValues->save($value);
+                $values = [];
+                foreach ($customer->customer_category_options as $option) {
+                    $value = [];
+                    isset($_POST['value_' . $option->extra_value_id . '_id']) && $value['id'] = $option->extra_value_id;
+                    $content = $this->request->getData('value_' .$option->id);
+                    $value['value'] = is_array($content) ? implode('|', $content) : $content;
+                    $value['customer_id'] = $id;
+                    $value['customer_category_option_id'] = $option->id;
+                    $values[] = $value;
                 }
+                $values = $this->Customers->CustomerCategoryValues->patchEntities([], $values);
+                
+                $this->Customers->CustomerCategoryValues->saveMany($values);
                 $this->Flash->success(__('The customer has been saved.'));
                 return $this->redirect(['action' => 'index']);
             }
@@ -173,7 +188,6 @@ class CustomersController extends AppController
             $options->options = $arr; 
             $customerCategories[] = $options;
         }
-
         $this->set(compact('customer', 'customerCategories'));
         $this->set('_serialize', ['customer']);
     }
@@ -319,11 +333,38 @@ class CustomersController extends AppController
                 }
                 $sWhere['customer_category_id in '] = $childrenArr;
                 $category = $this->Customers->CustomerCategories->get($customer_category_id, ['contain' => 'CustomerCategoryOptions']);
-                $extraFonts = $extraSearch = [];
+                $extraFonts = $extraSearch = $extraSearchCustomerId = [];
                 foreach ($category->customer_category_options as $option) {
-                    $option->font && $extraFonts[] = $option->name;
-                    $option->searchable && $extraSearch['option_' . $option->id] = $option->name;
+                    $sWhereSub = [];
+                    $option->font && $extraFonts[$option->id] = $option->name;
+                    if ($option->searchable) {
+                        $extraSearch['option' . $option->id] = [
+                            'name' => $option->name,
+                            'control' => in_array($option->type, ['textarea', 'text']) ? 'text' : $option->type,
+                            'options' => in_array($option->type, ['textarea', 'text']) ? $option->value : explode('|', $option->value)
+                        ];
+                        if ( isset($_GET['option' . $option->id]) && $_GET['option' . $option->id] !== '' )
+                        {
+                            $optionName = 'option' . $option->id;
+                            $$optionName = $_GET['option' . $option->id];
+                            $sWhereSub['customer_category_option_id'] = $option->id;
+                            if (in_array($option->type, ['textarea', 'text'])) {
+                                $sWhereSub['value LIKE '] = '%' . $$optionName . '%';
+                            } else {
+                                $sWhereSub['value'] = $$optionName;
+                            }
+                            $query = $this->Customers->CustomerCategoryValues->find('all')
+                                ->where($sWhereSub)
+                                ->select(['customer_id']);
+                            foreach ($query as $value) {
+                                $extraSearchCustomerId[] =  $value->customer_id;
+                            }
+                            $sWhere['Customers.id in '] = isset($sWhere['Customers.id in ']) ?  array_intersect($sWhere['Customers.id in '],$extraSearchCustomerId) : $extraSearchCustomerId;
+                        }
+                    }
+                    
                 }
+
             } else {
                 $list = $this->Customers->CustomerCategories->find('list', ['conditions' => ['parent_id' => 0]]);
                 $arr = array();
@@ -337,20 +378,31 @@ class CustomersController extends AppController
                 if(array_key_exists('customer_category_id', $sWhere)) unset($sWhere['customer_category_id']);
             }
         }
-
-
+        if (isset($sWhere['Customers.id in ']) && $sWhere['Customers.id in '] == []) $sWhere['Customers.id in '] = [0];
 
         $this->paginate = [
             'contain' => ['Users' => function($q){
                 return $q->select(['Users.username']);
-            },'CustomerCategories','CustomerCategoryValues'],
+            },'CustomerCategories'],
             'order' => ['Customers.modified Desc'],
             'limit' => '10',
             'conditions' => $sWhere
         ];
         $customers = $this->paginate($this->Customers);
+        if ($extraFonts && $customers) {
+            $optionIds = implode(',', array_keys($extraFonts));
+            foreach ($customers as $customer) {
+                $customer->customer_category_values = $this->Customers->CustomerCategoryValues->find()
+                    ->where(['customer_category_option_id in ' => $optionIds, 'customer_id' => $customer->id])
+                    ->combine('customer_category_option_id', 'value')
+                    ->toArray();
+            }
+        }
         $search = 1;
-        $this->set(compact('customers','name','username','mobile','email','start_modified','end_modified','customer_category_id','search','customerCategories','extraFonts','extraSearch'));
+        $searchVaribles = implode(',', array_keys($extraSearch));
+        $this->set(compact('customers','name','username','mobile','email','start_modified','end_modified','customer_category_id','search','customerCategories','extraFonts','extraSearch'));        
+        $searchVaribles && $this->set(compact($searchVaribles));
+
         $this->set('_serialize', ['customers']);
         $this->render('index');
     }

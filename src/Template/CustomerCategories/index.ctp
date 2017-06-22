@@ -6,6 +6,7 @@
 <nav class="large-2 medium-3 columns" id="actions-sidebar">
     <ul class="side-nav">
         <li class="heading"><?= __('Actions') ?></li>
+        <li><?= $this->Html->link(__('客戶列表'), ['controller' => 'Customers', 'action' => 'index']) ?></li>
         <li><?= $this->Html->link(__('新增分类'), ['action' => 'add']) ?></li>
     </ul>
 </nav>
@@ -25,6 +26,7 @@
     <table cellpadding="0" cellspacing="0">
         <thead>
             <tr>
+                <th scope="col"><?= $this->Paginator->sort('id') ?></th>
                 <th scope="col"><?= $this->Paginator->sort('name',['名称']) ?></th>
                 <th scope="col"><?= __('子分类') ?></th>
                 <th scope="col" class="hidden-xs"><?= $this->Paginator->sort('created',['创建时间']) ?></th>
@@ -35,9 +37,10 @@
         <tbody>
             <?php foreach ($customerCategories as $customerCategory): ?>
             <tr>
+                <td><?= h($customerCategory->id) ?></td>
                 <td><?= h($customerCategory->name) ?></td>
                 <td><?php if ($customerCategory->childCount !== 0): ?>
-                    <a href="<?= $this->Url->build(['action' => 'index',$customerCategory->id]) ?>"><?= $customerCategory->childCount ?></a>
+                    <a href="<?= $this->Url->build(['action' => 'index',$customerCategory->id]) ?>"><span class="label"><?= $customerCategory->childCount ?></span></a>
                 <?php else :?>0<?php endif ?></td>
                 <td class="hidden-xs"><?= h($customerCategory->created) ?></td>
                 <td class="hidden-xs"><?= h($customerCategory->modified) ?></td>

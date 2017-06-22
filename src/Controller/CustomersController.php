@@ -105,7 +105,7 @@ class CustomersController extends AppController
                     $value = $this->Customers->CustomerCategoryValues->newEntity();
                     $value->customer_id = $customer->id;
                     $value->customer_category_option_id = $key;
-                    $value->value = $this->request->getData('option_' . $key);
+                    $value->value = is_array($this->request->getData('option_' . $key)) ? implode('|', $this->request->getData('option_' . $key)) : $this->request->getData('option_' . $key);
                     $this->Customers->CustomerCategoryValues->save($value);
                 }
                 $this->Flash->success(__('The customer has been saved.'));
@@ -323,14 +323,12 @@ class CustomersController extends AppController
                     $value->options = $arr; 
                     $customerCategories[] = $value;                         
                 }
-                $children = $this->Customers->CustomerCategories->find('children', [
-                    'for' => $customer_category_id,
-                    'fields' => 'id'
-                ]);
-                $childrenArr = [$customer_category_id];
-                foreach ($children as $value) {
-                    $childrenArr[] = $value->id;
-                }
+                $query = $this->Customers->CustomerCategories->get($customer_category_id);
+                $childrenArr = $this->Customers->CustomerCategories->find('all')
+                    ->where(['lft >= ' => $query->lft, 'lft <= ' => $query->rght])
+                    ->extract('id')
+                    ->toArray();
+
                 $sWhere['customer_category_id in '] = $childrenArr;
                 $category = $this->Customers->CustomerCategories->get($customer_category_id, ['contain' => 'CustomerCategoryOptions']);
                 $extraFonts = $extraSearch = $extraSearchCustomerId = [];
@@ -344,7 +342,8 @@ class CustomersController extends AppController
                             'options' => in_array($option->type, ['textarea', 'text']) ? $option->value : explode('|', $option->value)
                         ];
                         if ( isset($_GET['option' . $option->id]) && $_GET['option' . $option->id] !== '' )
-                        {
+                        { 
+                            if (isset($sWhere['Customers.id in ']) && empty($sWhere['Customers.id in '])) continue;
                             $optionName = 'option' . $option->id;
                             $$optionName = $_GET['option' . $option->id];
                             $sWhereSub['customer_category_option_id'] = $option->id;
@@ -360,6 +359,7 @@ class CustomersController extends AppController
                                 $extraSearchCustomerId[] =  $value->customer_id;
                             }
                             $sWhere['Customers.id in '] = isset($sWhere['Customers.id in ']) ?  array_intersect($sWhere['Customers.id in '],$extraSearchCustomerId) : $extraSearchCustomerId;
+                           
                         }
                     }
                     
@@ -389,17 +389,17 @@ class CustomersController extends AppController
             'conditions' => $sWhere
         ];
         $customers = $this->paginate($this->Customers);
-        if ($extraFonts && $customers) {
-            $optionIds = implode(',', array_keys($extraFonts));
+        if (isset($extraFonts) && $extraFonts && $customers) {
+            $optionIds = array_keys($extraFonts);
             foreach ($customers as $customer) {
-                $customer->customer_category_values = $this->Customers->CustomerCategoryValues->find()
+                $customer->customer_category_id == $customer_category_id && $customer->customer_category_values = $this->Customers->CustomerCategoryValues->find()
                     ->where(['customer_category_option_id in ' => $optionIds, 'customer_id' => $customer->id])
                     ->combine('customer_category_option_id', 'value')
                     ->toArray();
             }
         }
         $search = 1;
-        $searchVaribles = implode(',', array_keys($extraSearch));
+        $searchVaribles = isset($extraSearch) ? implode(',', array_keys($extraSearch)) : '';
         $this->set(compact('customers','name','username','mobile','email','start_modified','end_modified','customer_category_id','search','customerCategories','extraFonts','extraSearch'));        
         $searchVaribles && $this->set(compact($searchVaribles));
 

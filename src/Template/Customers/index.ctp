@@ -8,6 +8,7 @@
         <li class="heading"><?= __('Actions') ?></li>
         <li><?= $this->Html->link(__('新增客户'), ['action' => 'add']) ?></li>
         <li><?= $this->Html->link(__('导入客户'), ['action' => 'import']) ?></li>
+        <li><?= $this->Html->link(__('分类'), ['controller' => 'CustomerCategories', 'action' => 'index']) ?></li>
     </ul>
 </nav>
 <div class="customers index large-10 medium-9 columns content">
@@ -68,8 +69,10 @@
                     <div class="col-md-3 col-xs-8">
                         <?php 
                             switch ($value['control']) {
-                                case 'radio':
-                                    echo $this->Form->radio($key, $value['options'], ['value' => isset($$key) ? $$key : '']);
+                                case 'checkbox':
+                                    foreach ($value['options'] as $v) {
+                                        echo '<label><input type="checkbox" name="' . $key . '[]" value="' . $v . '">' . $v . '</label>';
+                                    }
                                 break;
                                 case 'select':
                                     echo $this->Form->select($key, $value['options'], ['value' => isset($$key) ? $$key : '', 'empty' => '请选择']);
@@ -95,20 +98,19 @@
         </div>
         </form>
     </div>
-    <table cellpadding="0" cellspacing="0">
+    <table cellpadding="0" cellspacing="0" class="visible-md visible-lg">
         <thead>
             <tr>
                 <th scope="col" width="40"><?= $this->Paginator->sort('id') ?></th>
                 <th scope="col"><?= $this->Paginator->sort('customer_category_id', ['分类']) ?></th>
                 <th scope="col"><?= $this->Paginator->sort('name', ['姓名']) ?></th>
-                <th scope="col" class="hidden-xs"><?= $this->Paginator->sort('mobile', ['手机']) ?></th>
-                <th scope="col" class="hidden-xs"><?= $this->Paginator->sort('email', ['电邮']) ?></th>
+                <th scope="col"><?= $this->Paginator->sort('mobile', ['手机']) ?></th>
+                <th scope="col"><?= $this->Paginator->sort('email', ['电邮']) ?></th>
                 <?php if (isset($extraFonts)): ?>
                     <?php foreach ($extraFonts as $font): ?>
                     <th scope="col"><?= __($font) ?></th>   
                     <?php endforeach ?>   
-                <?php endif ?>                
-                <th scope="col"><?= __('备注') ?></th>
+                <?php endif ?> 
                 <th scope="col" class="actions"><?= __('Actions') ?></th>
             </tr>
         </thead>
@@ -118,15 +120,15 @@
                 <td><?= $this->Number->format($customer->id) ?></td>
                 <td><?= $customer->has('customer_category') ? $this->Html->link($customer->customer_category->name, ['controller' => 'CustomerCategories', 'action' => 'view', $customer->customer_category_id]) : '' ?></td>
                 <td><?= h($customer->name) ?></td>
-                <td class="hidden-xs"><a href="tel:<?= '+' . $customer->country_code . '-' . $customer->mobile?>"><?= '+' . $customer->country_code . '-' . $customer->mobile?></a></td>
-                <td class="hidden-xs"><?= $customer->email ?></td>
+                <td><?php if ( $customer->mobile): ?>
+                    <a href="tel:<?= '+' . $customer->country_code . '-' . $customer->mobile?>"><?= '+' . $customer->country_code . '-' . $customer->mobile?></a>
+                <?php endif ?></td>
+                <td><?= $customer->email ?></td>
                 <?php if (isset($extraFonts)): ?>
                     <?php foreach ($extraFonts as $key => $font): ?>
-                    <td scope="col"><?= __($customer->customer_category_values[$key]) ?></td>   
+                    <td scope="col"><?= __(isset($customer->customer_category_values[$key]) ? $customer->customer_category_values[$key] : '') ?></td>   
                     <?php endforeach ?>    
                 <?php endif ?>
-                
-                <td><?= $customer->remark ?></td>
                 <td class="actions">
                     <?= $this->Html->link(__('View'), ['action' => 'view', $customer->id]) ?>
                     <?= $this->Html->link(__('Edit'), ['action' => 'edit', $customer->id]) ?>
@@ -136,6 +138,30 @@
             <?php endforeach; ?>
         </tbody>
     </table>
+    <div class="hidden-md hidden-lg">
+        <?php foreach ($customers as $customer): ?>
+        <div class="row card text-left">
+            <div class="col-xs-12 business_name text-center">編號：</i><?= h($customer->id) ?></div>
+            <div class="col-xs-6 business_user"><i class="fa fa-users"></i><?= h($customer->name) ?></div>
+            <div class="col-xs-6 business_user"><i class="fa fa-map-marker"></i><?= $customer->has('customer_category') ? $this->Html->link($customer->customer_category->name, ['controller' => 'CustomerCategories', 'action' => 'view', $customer->customer_category_id]) : '' ?></div>            
+            <div class="col-xs-12"><i class="fa fa-mobile"></i><a href="tel:<?= '+' . $customer->country_code . '-' . $customer->mobile?>"><?php if ( $customer->mobile): ?>
+                <a href="tel:<?= '+' . $customer->country_code . '-' . $customer->mobile?>"><?= '+' . $customer->country_code . '-' . $customer->mobile?></a>
+            <?php endif ?></a></div>
+            <div class="col-xs-12"><i class="fa fa-envelope"></i><?= h($customer->email) ?></div>
+            <div class="col-xs-12"><i class="fa fa-clock-o"></i><?= h($customer->modified) ?></div>
+            <?php if (isset($extraFonts)): ?>
+                <?php foreach ($extraFonts as $key => $font): ?>
+                <div class="col-xs-12 business_user"><?= __($font) ?>：<?= $customer->customer_category_values[$key] ?></div>
+                <?php endforeach ?>   
+            <?php endif ?> 
+            <div class="col-xs-6 action">
+                <?= $this->Html->link(__('View'), ['action' => 'view', $customer->id],['class' => 'col-xs-4']) ?>
+                <?= $this->Html->link(__('Edit'), ['action' => 'edit', $customer->id],['class' => 'col-xs-4']) ?>   
+                <?= $this->Form->postLink(__('Delete'), ['action' => 'delete', $customer->id], ['confirm' => __('Are you sure you want to delete # {0}?', $customer->id),'class' => 'col-xs-4']) ?>
+            </div>
+        </div>
+        <?php endforeach ?>
+    </div>
     <div class="paginator">
         <ul class="pagination">
             <?= $this->Paginator->first('<< ' . __('first')) ?>

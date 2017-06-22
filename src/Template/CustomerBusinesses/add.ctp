@@ -28,7 +28,7 @@
             <label for="notice">通知</label>
         </div>
         <div class="input form-group" style="display: none;" id="recipient-field">
-            <input type="hidden" id="recipientIds">
+            <input type="hidden" id="recipientIds" name="recipientIds">
             <label for="recipient">通知对象</label>
             <input type="text" name="recipient" id="recipient">
             <div id="recipients"></div>
@@ -65,9 +65,12 @@
         $('#recipient').autocomplete({
           serviceUrl: url,
           onSelect: function(suggestion) {
-            var recipientIds = $('#recipientIds');
-            recipientIds.val(recipientIds.val() + suggestion.data + ',');
-            recipients.append('<span><label class="label">'+suggestion.value+'</label><i class="fa fa-trash" style="margin-left:6px;" onClick="deleteReci(this,'+suggestion.data+')"></i></span>');
+            var recipientIds = $('#recipientIds'),
+                IDs = recipientIds.val();
+            if ((',' + IDs).indexOf(',' + suggestion.data + ',') < 0) {
+                recipientIds.val(IDs + suggestion.data + ',');
+                recipients.append('<span><label class="label">'+suggestion.value+'</label><i class="fa fa-trash" style="margin-left:6px;" onClick="deleteReci(this,'+suggestion.data+')"></i></span>');
+            }
             this.value = ''
           }
         });

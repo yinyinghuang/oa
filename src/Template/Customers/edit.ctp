@@ -63,7 +63,7 @@
                         $options = explode('|', $value['value']);
                         $values = explode('|', $value['extra_value']);
                         $required = $value['required'] ? ' required' : '';
-                        echo '<div class="input' . $required . '"><label>' . $value['name'] . '</label>';
+                        echo '<div class="input' . $required . ' check" data-id="' . $value->id . '"><label class="checkbox_label">' . $value['name'] . '</label>';
                         foreach ($options as $option) {
                             echo '<label><input type="checkbox" name="value_' . $value->id . '[]"';
                             if(in_array($option, $values)) echo ' checked';
@@ -87,8 +87,34 @@
             if(confirm('修改分类将删除客户在当前分类下的专属字段，是否确定删除？')){
                 loadCatogeries(this);
             }
-        });       
+        }); 
+        $('#submit').on('click',function(){
+            var checkboxs = $('.check.required');
+               
+            if (checkboxs.length > 0) {
+                var flag = true;                
+                checkboxs.each(function(){
+                    var id = $(this).data('id'),
+                        input = $('input[name="value_' + id + '[]"]:checked');
+                    if(input.length == 0) {
+                        var checkbox_label = $(this).children('.checkbox_label')[0];
+                        flag = false;
+                        new PNotify({
+                            title: '錯誤',
+                            text: checkbox_label.innerHTML + '中至少选中一项',
+                            type: 'error',
+                            styling: 'bootstrap3',
+                            delay: 3000,
+                            width:'280px'
+                        });
+                    }
+                });
+                return flag;
+            } 
+        });
+             
     });
+
     function loadCatogeries(node){
         var parent_id = $('#parent-id');
         if (node.value == 0 && $(node).prev('select').length > 0) {

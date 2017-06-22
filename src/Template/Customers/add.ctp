@@ -35,6 +35,30 @@
     $(function(){
         $('.parent_id').on('change', function(){
             loadCatogeries(this);
+        });
+        $('#submit').on('click',function(){
+            var checkboxs = $('.check.required');
+               
+            if (checkboxs.length > 0) {
+                var flag = true;                
+                checkboxs.each(function(){
+                    var id = $(this).data('id'),
+                        input = $('input[name="option_' + id + '[]"]:checked');
+                    if(input.length == 0) {
+                        var checkbox_label = $(this).children('.checkbox_label')[0];
+                        flag = false;
+                        new PNotify({
+                            title: '錯誤',
+                            text: checkbox_label.innerHTML + '中至少选中一项',
+                            type: 'error',
+                            styling: 'bootstrap3',
+                            delay: 3000,
+                            width:'280px'
+                        });
+                    }
+                });
+                return flag;
+            } 
         });       
     });
     function loadCatogeries(node){
@@ -86,9 +110,9 @@
                                     break;
                                 case 'checkbox':
                                     var content = value.value.split('|');
-                                    html += '<div class="input ' + required + '"><label>' + value.name + '</label>';
+                                    html += '<div class="input ' + required + ' check" data-id="' + value.id + '"><label class="checkbox_label">' + value.name + '</label>';
                                     content.forEach(function(v){
-                                        html += '<label for="option-' + value.id + '"><input type="checkbox" name="option_' + value.id + '[]" id=option-"' + value.id + '"' + required + ' value="' + v + '"/>' + v + '</label>';
+                                        html += '<label for="option-' + value.id + '"><input type="checkbox" name="option_' + value.id + '[]" id=option-"' + value.id + '" value="' + v + '"/>' + v + '</label>';
                                     });
                                     html += '</div>';
                                     break;

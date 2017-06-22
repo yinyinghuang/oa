@@ -94,7 +94,7 @@ class CustomersTable extends Table
         $validator
             ->email('email')
             ->requirePresence('email', 'create')
-            ->notEmpty('email');
+            ->allowEmpty('email');
 
         $validator
             ->allowEmpty('position');
@@ -111,7 +111,7 @@ class CustomersTable extends Table
      */
     public function buildRules(RulesChecker $rules)
     {
-        $rules->add($rules->isUnique(['mobile']));
+        // $rules->add($rules->isUnique(['mobile']));
         $rules->add($rules->existsIn(['customer_category_id'], 'CustomerCategories'));
         $rules->add($rules->existsIn(['user_id'], 'Users'));
 

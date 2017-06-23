@@ -64,6 +64,7 @@
 
         $('#recipient').autocomplete({
           serviceUrl: url,
+          minChars : 0,
           onSelect: function(suggestion) {
             var recipientIds = $('#recipientIds'),
                 IDs = recipientIds.val();

@@ -350,7 +350,7 @@ class CustomersController extends AppController
                             if (in_array($option->type, ['textarea', 'text'])) {
                                 $sWhereSub['value LIKE '] = '%' . $$optionName . '%';
                             } else {
-                                $sWhereSub['value'] = $$optionName;
+                                $sWhereSub['value'] = is_array($$optionName) ? implode('|', $$optionName) : $$optionName;
                             }
                             $query = $this->Customers->CustomerCategoryValues->find('all')
                                 ->where($sWhereSub)

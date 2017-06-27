@@ -2,117 +2,149 @@
 namespace App\Controller;
 
 use App\Controller\AppController;
+use Cake\Routing\Router;
 
-/**
- * Dropboxes Controller
- *
- * @property \App\Model\Table\DropboxesTable $Dropboxes
- *
- * @method \App\Model\Entity\Dropbox[] paginate($object = null, array $settings = [])
- */
 class DropboxesController extends AppController
 {
-
-    /**
-     * Index method
-     *
-     * @return \Cake\Http\Response|null
-     */
-    public function index()
+    public function index($parent_id = 0)
     {
+        $this->set('datatableUrl', Router::url([
+            'action' => 'ajaxData'
+        ]));
+        $this->loadModel('Folders');
         $this->paginate = [
-            'contain' => ['Files', 'Users']
+            'contain' => ['Users'],
+            'conditions' => ['parent_id' => $parent_id],
+            'limit' => 10
         ];
-        $dropboxes = $this->paginate($this->Dropboxes);
-
-        $this->set(compact('dropboxes'));
-        $this->set('_serialize', ['dropboxes']);
+        $folders =$this->paginate($this->Folders);
+        $parent_id && $crumbs = $this->Folders->find('path',['for' => $parent_id]);
+        $this->set(compact('folders','parent_id','crumbs'));
     }
 
-    /**
-     * View method
-     *
-     * @param string|null $id Dropbox id.
-     * @return \Cake\Http\Response|null
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function view($id = null)
-    {
-        $dropbox = $this->Dropboxes->get($id, [
-            'contain' => ['Files', 'Users']
-        ]);
+    function ajaxData() {
+        $aColumns = array( 'Folders.name', 'Folders.phone', 'booking_time', 'departure_time', 'number_of_people', 'amount','Folders.id' );
+        $iDisplayStart = $this->request->query('iDisplayStart');
+        $iDisplayLength = $this->request->query('iDisplayLength');
+        $sSearch = $this->request->query('sSearch');
+        $sEcho = $this->request->query('sEcho');
 
-        $this->set('dropbox', $dropbox);
-        $this->set('_serialize', ['dropbox']);
-    }
+        //Paging
+        $startPage = 1;
+        if($iDisplayStart == 0){
+            $startPage = 1;
+        }else{
+            $startPage +=  $iDisplayStart / $iDisplayLength;
+        }
 
-    /**
-     * Add method
-     *
-     * @return \Cake\Http\Response|null Redirects on successful add, renders view otherwise.
-     */
-    public function add()
-    {
-        $dropbox = $this->Dropboxes->newEntity();
-        if ($this->request->is('post')) {
-            $dropbox = $this->Dropboxes->patchEntity($dropbox, $this->request->getData());
-            if ($this->Dropboxes->save($dropbox)) {
-                $this->Flash->success(__('The dropbox has been saved.'));
-
-                return $this->redirect(['action' => 'index']);
+        //Ordering
+        $sOrder;
+        if ( isset( $_GET['iSortCol_0'] ) )
+        {
+            $sOrder = "";
+            for ( $i=0 ; $i<intval( $_GET['iSortingCols'] ) ; $i++ )
+            {
+                if ( $_GET[ 'bSortable_'.intval($_GET['iSortCol_'.$i]) ] == "true" )
+                {
+                    $sOrder[] = $aColumns[ intval( $_GET['iSortCol_'.$i] ) ]." ".
+                        ($_GET['sSortDir_'.$i]==='asc' ? 'ASC' : 'DESC');
+                }
             }
-            $this->Flash->error(__('The dropbox could not be saved. Please, try again.'));
-        }
-        $files = $this->Dropboxes->Files->find('list', ['limit' => 200]);
-        $users = $this->Dropboxes->Users->find('list', ['limit' => 200]);
-        $this->set(compact('dropbox', 'files', 'users'));
-        $this->set('_serialize', ['dropbox']);
-    }
-
-    /**
-     * Edit method
-     *
-     * @param string|null $id Dropbox id.
-     * @return \Cake\Http\Response|null Redirects on successful edit, renders view otherwise.
-     * @throws \Cake\Network\Exception\NotFoundException When record not found.
-     */
-    public function edit($id = null)
-    {
-        $dropbox = $this->Dropboxes->get($id, [
-            'contain' => []
-        ]);
-        if ($this->request->is(['patch', 'post', 'put'])) {
-            $dropbox = $this->Dropboxes->patchEntity($dropbox, $this->request->getData());
-            if ($this->Dropboxes->save($dropbox)) {
-                $this->Flash->success(__('The dropbox has been saved.'));
-
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The dropbox could not be saved. Please, try again.'));
-        }
-        $files = $this->Dropboxes->Files->find('list', ['limit' => 200]);
-        $users = $this->Dropboxes->Users->find('list', ['limit' => 200]);
-        $this->set(compact('dropbox', 'files', 'users'));
-        $this->set('_serialize', ['dropbox']);
-    }
-
-    /**
-     * Delete method
-     *
-     * @param string|null $id Dropbox id.
-     * @return \Cake\Http\Response|null Redirects to index.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function delete($id = null)
-    {
-        $this->request->allowMethod(['post', 'delete']);
-        $dropbox = $this->Dropboxes->get($id);
-        if ($this->Dropboxes->delete($dropbox)) {
-            $this->Flash->success(__('The dropbox has been deleted.'));
-        } else {
-            $this->Flash->error(__('The dropbox could not be deleted. Please, try again.'));
         }
 
-        return $this->redirect(['action' => 'index']);
+        $sWhere = null;
+
+        if ( isset($_GET['bSearchable_0']) && $_GET['bSearchable_0'] == "true" && $_GET['sSearch_0'] != '' )
+        {
+            $sWhere[$aColumns[0].' LIKE'] = "%".$_GET['sSearch_0']."%";
+        }
+        if ( isset($_GET['bSearchable_1']) && $_GET['bSearchable_1'] == "true" && $_GET['sSearch_1'] != '' )
+        {
+            $sWhere[$aColumns[1].' LIKE'] = "%".$_GET['sSearch_1']."%";
+        }
+        if ( isset($_GET['bSearchable_6']) && $_GET['bSearchable_6'] == "true" && $_GET['sSearch_6'] != '' )
+        {
+            $sWhere[$aColumns[6]] = $_GET['sSearch_6'];
+        }
+        if ( isset($_GET['bSearchable_3']) && $_GET['bSearchable_3'] == "true" && $_GET['sSearch_3'] != '' )
+        {
+            $sWhere['booking_time >='] = $_GET['sSearch_3'];
+        }
+        if ( isset($_GET['bSearchable_4']) && $_GET['bSearchable_4'] == "true" && $_GET['sSearch_4'] != '' )
+        {
+            $sWhere['booking_time <='] = $_GET['sSearch_4'];
+        }
+
+
+        $conditions = array('AND' => $sWhere);
+
+        $bookings = $this->Bookings
+            ->find('all',[
+                    'order' => $sOrder,
+                    'conditions' => $sWhere!=null?$conditions:[]
+                ])
+            ->contain('Folders')
+            ->limit($iDisplayLength)->page($startPage);
+
+        foreach ($bookings as $row){
+            $row['booking_time'] = date_format($row['booking_time'], 'Y-m-d H:i');
+            $row['departure_time'] = date_format($row['departure_time'], 'Y-m-d H:i');
+        }
+        $result['aaData'] = $bookings;
+        $result['sEcho'] = intval($sEcho);
+        $result['iTotalRecords'] = $bookings->count();
+        $result['iTotalDisplayRecords'] = $bookings->count();
+        $this->response->body(json_encode($result));
+        return $this->response;
     }
+
+    private function getDirSize($dir)
+     { 
+      $handle = opendir($dir);
+      while (false!==($FolderOrFile = readdir($handle)))
+      { 
+       if($FolderOrFile != "." && $FolderOrFile != "..") 
+       { 
+        if(is_dir("$dir/$FolderOrFile"))
+        { 
+         $sizeResult += getDirSize("$dir/$FolderOrFile"); 
+        }
+        else
+        { 
+         $sizeResult += filesize("$dir/$FolderOrFile"); 
+        }
+       } 
+      }
+      closedir($handle);
+      return $sizeResult;
+     }
+     // 单位自动转换函数
+     private function getRealSize($size)
+     { 
+      $kb = 1024;   // Kilobyte
+      $mb = 1024 * $kb; // Megabyte
+      $gb = 1024 * $mb; // Gigabyte
+      $tb = 1024 * $gb; // Terabyte
+      if($size < $kb)
+      { 
+       return $size." B";
+      }
+      else if($size < $mb)
+      { 
+       return round($size/$kb,2)." KB";
+      }
+      else if($size < $gb)
+      { 
+       return round($size/$mb,2)." MB";
+      }
+      else if($size < $tb)
+      { 
+       return round($size/$gb,2)." GB";
+      }
+      else
+      { 
+       return round($size/$tb,2)." TB";
+      }
+     }
+     // echo getRealSize(getDirSize('需要获取大小的目录'));
 }

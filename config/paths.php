@@ -50,6 +50,10 @@ define('CONFIG', ROOT . DS . 'config' . DS);
  * File path to the webroot directory.
  */
 define('WWW_ROOT', ROOT . DS . 'webroot' . DS);
+/**
+ * File path to the dropboxes directory.
+ */
+define('DB_ROOT', ROOT . DS . 'webroot' . DS  . 'files' . DS . 'dropboxes' . DS);
 
 /**
  * Path to the tests directory.

@@ -1085,3 +1085,17 @@ input,textarea {
   padding: 0px;
   outline: none;
 }
+.documents .block{
+    display: block;
+    padding: 5px;
+    border: 1px solid;
+    box-sizing: border-box;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+.documents .nav{
+  padding: 10px;
+}
+.documents tr.highlight {
+    background-color: whitesmoke !important;
+}

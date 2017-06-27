@@ -12,7 +12,6 @@ class DashboardController extends AppController
         $this->loadModel('Customers');
         $this->loadModel('Projects');
         $this->loadModel('Finances');
-        $this->loadModel('Dropboxes');
         $_user = $this->request->session()->read('Auth')['User'];
 
         $this->loadModel('UserDepartmentRoles');

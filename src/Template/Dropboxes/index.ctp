@@ -3,50 +3,60 @@
   * @var \App\View\AppView $this
   */
 ?>
-<nav class="large-3 medium-4 columns" id="actions-sidebar">
-    <ul class="side-nav">
-        <li class="heading"><?= __('Actions') ?></li>
-        <li><?= $this->Html->link(__('New Dropbox'), ['action' => 'add']) ?></li>
-        <li><?= $this->Html->link(__('List Files'), ['controller' => 'Files', 'action' => 'index']) ?></li>
-        <li><?= $this->Html->link(__('New File'), ['controller' => 'Files', 'action' => 'add']) ?></li>
-        <li><?= $this->Html->link(__('List Users'), ['controller' => 'Users', 'action' => 'index']) ?></li>
-        <li><?= $this->Html->link(__('New User'), ['controller' => 'Users', 'action' => 'add']) ?></li>
-    </ul>
-</nav>
-<div class="dropboxes index large-9 medium-8 columns content">
-    <h3><?= __('Dropboxes') ?></h3>
-    <table cellpadding="0" cellspacing="0">
+<div class="folders index content">
+    <nav class="nav">
+        <div class="text-center pull-right">
+            <a href="" class="btn btn-primary">
+                <i class="fa fa-plus"></i><span class="hidden-xs">新建文件夹</span>
+            </a>            
+        </div>
+        <div class="text-center pull-right">
+            <a href="" class="btn btn-danger">
+               <i class="fa fa-cloud-upload"></i><span class="hidden-xs">上传文件</span>
+            </a>            
+        </div>
+        <div class="pull-left col-md-6 col-sm-6 col-xs-12">
+            <ol class="breadcrumb" style="margin-left:0;padding: 0">
+                <?php if ($parent_id == 0): ?>
+                    <li class="active">根目录</li>
+                <?php else: ?>
+                    <li><a href="<?= $this->Url->build(['action' => 'index'])?>">根目录</a></li>
+                <?php endif ?>
+                <?php if (isset($crumbs)): ?>
+                    <?php foreach ($crumbs as $crumb): ?>
+                    <?php if ($parent_id == $crumb->id): ?><li class="active"><?= $crumb->origin_name?></li>
+                    <?php else: ?>
+                    <li><a href="<?= $this->Url->build(['action' => 'index', $crumb->id])?>"><?= $crumb->origin_name?></a></li>
+                    <?php endif ?>    
+                    <?php endforeach ?>
+                <?php endif ?>
+            </ol>
+        </div>
+    </nav>
+    <div class="clearfix"></div>
+    <table cellpadding="0" cellspacing="0" id="datatable">
         <thead>
-            <tr>
-                <th scope="col"><?= $this->Paginator->sort('id') ?></th>
-                <th scope="col"><?= $this->Paginator->sort('file_id') ?></th>
-                <th scope="col"><?= $this->Paginator->sort('size') ?></th>
-                <th scope="col"><?= $this->Paginator->sort('type') ?></th>
-                <th scope="col"><?= $this->Paginator->sort('user_id') ?></th>
-                <th scope="col"><?= $this->Paginator->sort('created') ?></th>
-                <th scope="col"><?= $this->Paginator->sort('modified') ?></th>
-                <th scope="col" class="actions"><?= __('Actions') ?></th>
+            <tr>                
+                <th scope="col" width="40">id</th>
+                <th scope="col">文件名</th>
+                <th scope="col"></th>
+                <th scope="col">大小</th>
+                <th scope="col">修改时间</th>
             </tr>
         </thead>
-        <tbody>
-            <?php foreach ($dropboxes as $dropbox): ?>
-            <tr>
-                <td><?= $this->Number->format($dropbox->id) ?></td>
-                <td><?= $dropbox->has('file') ? $this->Html->link($dropbox->file->id, ['controller' => 'Files', 'action' => 'view', $dropbox->file->id]) : '' ?></td>
-                <td><?= $this->Number->format($dropbox->size) ?></td>
-                <td><?= h($dropbox->type) ?></td>
-                <td><?= $dropbox->has('user') ? $this->Html->link($dropbox->user->id, ['controller' => 'Users', 'action' => 'view', $dropbox->user->id]) : '' ?></td>
-                <td><?= h($dropbox->created) ?></td>
-                <td><?= h($dropbox->modified) ?></td>
-                <td class="actions">
-                    <?= $this->Html->link(__('View'), ['action' => 'view', $dropbox->id]) ?>
-                    <?= $this->Html->link(__('Edit'), ['action' => 'edit', $dropbox->id]) ?>
-                    <?= $this->Form->postLink(__('Delete'), ['action' => 'delete', $dropbox->id], ['confirm' => __('Are you sure you want to delete # {0}?', $dropbox->id)]) ?>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
+        <tbody></tbody>
     </table>
+    <div class="hidden">
+        <?php foreach ($folders as $folder): ?>
+        <div class="text-center col-md-3 col-sm-4 col-xs-6">
+            <a class="block" href="<?= $this->Url->build(['action' => 'index', $folder->id])?>">
+                <div><i class="fa fa-folder-open-o fa-4x"></i></div>
+                <div><?= h($folder->origin_name) ?></div>
+            </a>                        
+        </div>
+        <?php endforeach ?>
+    </div>
+    <div class="clearfix"></div>
     <div class="paginator">
         <ul class="pagination">
             <?= $this->Paginator->first('<< ' . __('first')) ?>
@@ -58,3 +68,35 @@
         <p><?= $this->Paginator->counter(['format' => __('Page {{page}} of {{pages}}, showing {{current}} record(s) out of {{count}} total')]) ?></p>
     </div>
 </div>
+<div class="clearfix"></div>
+<?= $this->start('script') ?>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/dataTables.bootstrap.min.css" />
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js" ></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.12/js/dataTables.bootstrap.min.js" ></script>
+
+<script type="text/javascript">
+    $(function(){
+        oTable = $('#datatable').dataTable({
+            "bProcessing": true,
+            "bServerSide": true,
+            "sAjaxSource": "",
+            "aaSorting": [[2,'desc']],
+            "aoColumns": [
+              { "mData": "booking_user.name" },
+              { "mData": "booking_user.phone" },
+              { "mData": "booking_time" },
+              { "mData": "departure_time"},
+              { "mData": "number_of_people"},
+              { "mData": "amount" },
+              { "mData": "booking_user.id" }
+            ],
+            "columnDefs": [
+            {
+                "targets": [ 6 ],
+                "visible": false
+            }
+            ]
+        });
+    });
+</script>
+<?= $this->end() ?>

@@ -106,7 +106,7 @@ class ProjectSchedulesController extends AppController
                     case 'pdf':
                         $icon = 'file-pdf-o';
                     break;
-                    case 'pdf':
+                    case 'ppt':
                         $icon = 'file-powerpoint-o';
                     break;
                     case 'zip':

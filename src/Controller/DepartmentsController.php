@@ -67,6 +67,7 @@ class DepartmentsController extends AppController
      */
     public function add($parent_id = null)
     {   
+        $_user = $this->request->session()->read('Auth')['User'];
         $department = $this->Departments->newEntity();
         if ($this->request->is('post')) {
             if ($this->request->getData('parent_id') !== '0') {
@@ -79,6 +80,50 @@ class DepartmentsController extends AppController
             }
             $department = $this->Departments->patchEntity($department, $this->request->getData());
             if ($this->Departments->save($department)) {
+                $crumbs = $this->Departments->find('path',['for' => $department->id])
+                        ->select(['id']);
+                $path = DB_ROOT;
+                foreach ($crumbs as $value) {
+                    $path .= 'department_' . $value->id . DS;
+                }
+                if(!is_dir($path)) mkdir($path);
+                //新建部门文件夹及其下公共文件夹
+                $this->loadModel('Documents');
+                $folder = $this->Documents->newEntity([
+                    'user_id' =>$_user['id'],
+                    'spell' => $this->getALLPY($department->name),
+                    'name' => 'department_' . $department->id,
+                    'origin_name' => $department->name,
+                    'size' => 0,
+                    'ext' => '',
+                    'is_dir' => 1,
+                    'parent_id' => $department->parent_id ? $this->Documents->find('all',['conditions' => ['name' => 'department_' . $department->parent_id]])->first()->id : 0,
+                    'level' => 2,
+                    'deleted' => 0
+                ]); 
+                $this->Documents->save($folder);
+                $folder->ord = $this->Documents->find()->where(['is_dir' => 1])->order(['ord' => 'DESC'])->first();
+                $folder->ord = $folder->ord ? $folder->ord->ord ++ : 1;
+                $this->Documents->save($folder);
+
+                if(!is_dir($path)) mkdir($path . DS . 'common');
+                $folder = $this->Documents->newEntity([
+                    'user_id' =>$_user['id'],
+                    'spell' => 'bumengonggongwenjianjia',
+                    'name' => 'common',
+                    'origin_name' => '部门公共文件夹',
+                    'size' => 0,
+                    'ext' => '',
+                    'is_dir' => 1,
+                    'parent_id' => $folder->id,
+                    'level' => 1,
+                    'deleted' => 0
+                ]); 
+                $this->Documents->save($folder);
+                $folder->ord = $this->Documents->find()->where(['is_dir' => 1])->order(['ord' => 'DESC'])->first();
+                $folder->ord = $folder->ord ? $folder->ord->ord ++ : 1;
+
+                  
                 $this->Flash->success(__('The department has been saved.'));
 
                 return $this->redirect(['action' => 'index'], $this->request->getData('parent_id'));
@@ -106,7 +151,7 @@ class DepartmentsController extends AppController
             'contain' => []
         ]);
         if ($this->request->is(['patch', 'post', 'put'])) {
-            if ($this->request->getData('parent_id') != null) {
+            if ($this->request->getData('parent_id') != 0) {
                 $parent = $this->Departments->get($this->request->getData('parent_id'));
                 if ($parent->lft > $department->lft && $parent->lft < $department->rght) {
                     $this->Flash->error(__('不可选择下级分类作为上级分类'));
@@ -116,6 +161,26 @@ class DepartmentsController extends AppController
             }
             $department = $this->Departments->patchEntity($department, $this->request->getData());
             if ($this->Departments->save($department)) {
+
+                //新建部门文件夹及其下公共文件夹
+                $this->loadModel('Documents');
+                $folder = $this->Documents->find('all')
+                    ->where(['name' => 'department_' . $id])
+                    ->first();
+                if ($folder->origin_name != $department->name) {
+                    $folder->origin_name = $department->name;
+                    $folder->spell = $this->getALLPY($department->name);
+                    $this->Documents->save($folder);
+                    $parentFolders = $this->Documents->find()
+                        ->where(['lft < ' => $folder->lft, 'rght > ' => $folder->rght, 'is_dir' => 1]);
+                    foreach ($parentFolders as $value) {
+                        $value->modified = date('Y-m-d H:i:s');
+                        $this->Documents->save($value);
+                    }
+                }
+
+                $this->Documents->save($folder);
+
                 $this->Flash->success(__('The department has been saved.'));
 
                 return $this->redirect(['action' => 'index']);
@@ -171,10 +236,24 @@ class DepartmentsController extends AppController
             $this->Flash->error(__('当前部门下存在子部门或者用户，请清空子部门及用户后再操作.'));
             return $this->redirect(['action' => 'index']);
         }
-        if ($this->Departments->delete($department)) {
-            $this->Flash->success(__('The department has been deleted.'));
-        } else {
-            $this->Flash->error(__('The department could not be deleted. Please, try again.'));
+        $this->loadModel('Documents');
+        $this->Documents->deleteAll(['name' => 'department_' . $department->id]);
+        $parentDepartments = $this->Departments->find('path',['for' => $id])
+            ->order(['level' => 'ASC']);
+        $path = DB_ROOT;
+        foreach ($parentDepartments as $value) {
+            $path .= 'department_' . $value->id . DS;
+        }
+        $delete = $this->deleteDir($path);
+        if ($delete) {
+            if ($this->Departments->delete($department)) {
+
+                $this->Flash->success(__('The department has been deleted.'));
+            } else {
+                $this->Flash->error(__('The department could not be deleted. Please, try again.'));
+            }
+        }else {
+            $this->Flash->error(__('部门文件删除失败'));
         }
 
         return $this->redirect(['action' => 'index']);

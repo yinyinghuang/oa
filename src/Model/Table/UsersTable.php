@@ -56,7 +56,10 @@ class UsersTable extends Table
         $this->hasMany('Customers', [
             'foreignKey' => 'user_id'
         ]);
-        $this->hasMany('Dropboxes', [
+        $this->hasMany('Files', [
+            'foreignKey' => 'user_id'
+        ]);
+        $this->hasMany('Folders', [
             'foreignKey' => 'user_id'
         ]);
         $this->hasMany('FinanceBalances', [

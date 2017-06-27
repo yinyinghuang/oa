@@ -7,22 +7,24 @@ use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
 /**
- * Files Model
+ * Documents Model
  *
- * @property \Cake\ORM\Association\BelongsTo $Folders
  * @property \Cake\ORM\Association\BelongsTo $Users
+ * @property \Cake\ORM\Association\BelongsTo $ParentDocuments
+ * @property \Cake\ORM\Association\HasMany $ChildDocuments
  *
- * @method \App\Model\Entity\File get($primaryKey, $options = [])
- * @method \App\Model\Entity\File newEntity($data = null, array $options = [])
- * @method \App\Model\Entity\File[] newEntities(array $data, array $options = [])
- * @method \App\Model\Entity\File|bool save(\Cake\Datasource\EntityInterface $entity, $options = [])
- * @method \App\Model\Entity\File patchEntity(\Cake\Datasource\EntityInterface $entity, array $data, array $options = [])
- * @method \App\Model\Entity\File[] patchEntities($entities, array $data, array $options = [])
- * @method \App\Model\Entity\File findOrCreate($search, callable $callback = null, $options = [])
+ * @method \App\Model\Entity\Document get($primaryKey, $options = [])
+ * @method \App\Model\Entity\Document newEntity($data = null, array $options = [])
+ * @method \App\Model\Entity\Document[] newEntities(array $data, array $options = [])
+ * @method \App\Model\Entity\Document|bool save(\Cake\Datasource\EntityInterface $entity, $options = [])
+ * @method \App\Model\Entity\Document patchEntity(\Cake\Datasource\EntityInterface $entity, array $data, array $options = [])
+ * @method \App\Model\Entity\Document[] patchEntities($entities, array $data, array $options = [])
+ * @method \App\Model\Entity\Document findOrCreate($search, callable $callback = null, $options = [])
  *
  * @mixin \Cake\ORM\Behavior\TimestampBehavior
+ * @mixin \Cake\ORM\Behavior\TreeBehavior
  */
-class FilesTable extends Table
+class DocumentsTable extends Table
 {
 
     /**
@@ -35,18 +37,24 @@ class FilesTable extends Table
     {
         parent::initialize($config);
 
-        $this->setTable('files');
+        $this->setTable('documents');
         $this->setDisplayField('name');
         $this->setPrimaryKey('id');
 
         $this->addBehavior('Timestamp');
+        $this->addBehavior('Tree');
 
-        $this->belongsTo('Folders', [
-            'foreignKey' => 'folder_id',
+        $this->belongsTo('Users', [
+            'foreignKey' => 'user_id',
             'joinType' => 'INNER'
         ]);
-        $this->belongsTo('Users', [
-            'foreignKey' => 'user_id'
+        $this->belongsTo('ParentDocuments', [
+            'className' => 'Documents',
+            'foreignKey' => 'parent_id'
+        ]);
+        $this->hasMany('ChildDocuments', [
+            'className' => 'Documents',
+            'foreignKey' => 'parent_id'
         ]);
     }
 
@@ -67,21 +75,33 @@ class FilesTable extends Table
             ->notEmpty('spell');
 
         $validator
+            ->requirePresence('origin_name', 'create')
+            ->notEmpty('origin_name');
+
+        $validator
             ->requirePresence('name', 'create')
             ->notEmpty('name');
 
         $validator
-            ->integer('size')
             ->requirePresence('size', 'create')
             ->notEmpty('size');
 
         $validator
-            ->requirePresence('type', 'create')
-            ->notEmpty('type');
+            ->allowEmpty('ext');
+
+        $validator
+            ->boolean('is_dir')
+            ->requirePresence('is_dir', 'create')
+            ->notEmpty('is_dir');
 
         $validator
             ->integer('ord')
             ->allowEmpty('ord');
+
+        $validator
+            ->integer('level')
+            ->requirePresence('level', 'create')
+            ->notEmpty('level');
 
         $validator
             ->boolean('deleted')
@@ -100,8 +120,8 @@ class FilesTable extends Table
      */
     public function buildRules(RulesChecker $rules)
     {
-        $rules->add($rules->existsIn(['folder_id'], 'Folders'));
         $rules->add($rules->existsIn(['user_id'], 'Users'));
+        // $rules->add($rules->existsIn(['parent_id'], 'ParentDocuments'));
 
         return $rules;
     }

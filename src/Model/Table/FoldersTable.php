@@ -7,22 +7,25 @@ use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
 /**
- * Files Model
+ * Folders Model
  *
- * @property \Cake\ORM\Association\BelongsTo $Folders
  * @property \Cake\ORM\Association\BelongsTo $Users
+ * @property \Cake\ORM\Association\BelongsTo $ParentFolders
+ * @property \Cake\ORM\Association\HasMany $Files
+ * @property \Cake\ORM\Association\HasMany $ChildFolders
  *
- * @method \App\Model\Entity\File get($primaryKey, $options = [])
- * @method \App\Model\Entity\File newEntity($data = null, array $options = [])
- * @method \App\Model\Entity\File[] newEntities(array $data, array $options = [])
- * @method \App\Model\Entity\File|bool save(\Cake\Datasource\EntityInterface $entity, $options = [])
- * @method \App\Model\Entity\File patchEntity(\Cake\Datasource\EntityInterface $entity, array $data, array $options = [])
- * @method \App\Model\Entity\File[] patchEntities($entities, array $data, array $options = [])
- * @method \App\Model\Entity\File findOrCreate($search, callable $callback = null, $options = [])
+ * @method \App\Model\Entity\Folder get($primaryKey, $options = [])
+ * @method \App\Model\Entity\Folder newEntity($data = null, array $options = [])
+ * @method \App\Model\Entity\Folder[] newEntities(array $data, array $options = [])
+ * @method \App\Model\Entity\Folder|bool save(\Cake\Datasource\EntityInterface $entity, $options = [])
+ * @method \App\Model\Entity\Folder patchEntity(\Cake\Datasource\EntityInterface $entity, array $data, array $options = [])
+ * @method \App\Model\Entity\Folder[] patchEntities($entities, array $data, array $options = [])
+ * @method \App\Model\Entity\Folder findOrCreate($search, callable $callback = null, $options = [])
  *
  * @mixin \Cake\ORM\Behavior\TimestampBehavior
+ * @mixin \Cake\ORM\Behavior\TreeBehavior
  */
-class FilesTable extends Table
+class FoldersTable extends Table
 {
 
     /**
@@ -35,19 +38,28 @@ class FilesTable extends Table
     {
         parent::initialize($config);
 
-        $this->setTable('files');
+        $this->setTable('folders');
         $this->setDisplayField('name');
         $this->setPrimaryKey('id');
 
         $this->addBehavior('Timestamp');
+        $this->addBehavior('Tree');
 
-        $this->belongsTo('Folders', [
-            'foreignKey' => 'folder_id',
+        $this->belongsTo('Users', [
+            'foreignKey' => 'user_id',
             'joinType' => 'INNER'
         ]);
-        $this->belongsTo('Users', [
-            'foreignKey' => 'user_id'
+        $this->belongsTo('ParentFolders', [
+            'className' => 'Folders',
+            'foreignKey' => 'parent_id'
         ]);
+        $this->hasMany('Files', [
+            'foreignKey' => 'folder_id'
+        ])->setDependent(true);
+        $this->hasMany('ChildFolders', [
+            'className' => 'Folders',
+            'foreignKey' => 'parent_id'
+        ])->setDependent(true);
     }
 
     /**
@@ -71,17 +83,13 @@ class FilesTable extends Table
             ->notEmpty('name');
 
         $validator
-            ->integer('size')
-            ->requirePresence('size', 'create')
-            ->notEmpty('size');
-
-        $validator
-            ->requirePresence('type', 'create')
-            ->notEmpty('type');
-
-        $validator
             ->integer('ord')
             ->allowEmpty('ord');
+
+        $validator
+            ->integer('level')
+            ->requirePresence('level', 'create')
+            ->notEmpty('level');
 
         $validator
             ->boolean('deleted')
@@ -100,8 +108,8 @@ class FilesTable extends Table
      */
     public function buildRules(RulesChecker $rules)
     {
-        $rules->add($rules->existsIn(['folder_id'], 'Folders'));
         $rules->add($rules->existsIn(['user_id'], 'Users'));
+        // $rules->add($rules->existsIn(['parent_id'], 'ParentFolders'));
 
         return $rules;
     }

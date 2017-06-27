@@ -1,22 +1,22 @@
 <?php
 namespace App\Test\TestCase\Model\Table;
 
-use App\Model\Table\FilesTable;
+use App\Model\Table\FoldersTable;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 
 /**
- * App\Model\Table\FilesTable Test Case
+ * App\Model\Table\FoldersTable Test Case
  */
-class FilesTableTest extends TestCase
+class FoldersTableTest extends TestCase
 {
 
     /**
      * Test subject
      *
-     * @var \App\Model\Table\FilesTable
+     * @var \App\Model\Table\FoldersTable
      */
-    public $Files;
+    public $Folders;
 
     /**
      * Fixtures
@@ -24,7 +24,6 @@ class FilesTableTest extends TestCase
      * @var array
      */
     public $fixtures = [
-        'app.files',
         'app.folders',
         'app.users',
         'app.article_datas',
@@ -44,6 +43,7 @@ class FilesTableTest extends TestCase
         'app.sms_records',
         'app.customer_businesses',
         'app.follow_datas',
+        'app.files',
         'app.finance_balances',
         'app.project_issue_solutions',
         'app.tasks',
@@ -64,8 +64,8 @@ class FilesTableTest extends TestCase
     public function setUp()
     {
         parent::setUp();
-        $config = TableRegistry::exists('Files') ? [] : ['className' => 'App\Model\Table\FilesTable'];
-        $this->Files = TableRegistry::get('Files', $config);
+        $config = TableRegistry::exists('Folders') ? [] : ['className' => 'App\Model\Table\FoldersTable'];
+        $this->Folders = TableRegistry::get('Folders', $config);
     }
 
     /**
@@ -75,7 +75,7 @@ class FilesTableTest extends TestCase
      */
     public function tearDown()
     {
-        unset($this->Files);
+        unset($this->Folders);
 
         parent::tearDown();
     }

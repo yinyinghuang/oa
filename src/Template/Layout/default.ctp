@@ -113,14 +113,8 @@ $title = 'Market Hotpot';
                           <li><a href="<?= $this->Url->build(['controller' => 'ProjectSchedules', 'action' => 'mySchedules']) ?>">我的计划</a></li>
                         </ul>
                       </li>
-                       <li><a><i class="fa fa-dropbox"></i> 网盘 <span class="fa fa-chevron-down"></span></a>
-                        <ul class="nav child_menu">
-                          <li><a href="<?= $this->Url->build(['controller' => 'Customers', 'action' => 'index']) ?>">客户</a></li>
-                          <li><a href="<?= $this->Url->build(['controller' => 'customerIncomes', 'action' => 'index']) ?>">客户收益</a></li>
-                          <li><a href="<?= $this->Url->build(['controller' => 'Customers', 'action' => 'import']) ?>">批量导入</a></li>
-                          <li><a href="<?= $this->Url->build(['controller' => 'CustomerCategories', 'action' => 'index']) ?>">客户分类</a></li>
-                          <li><a href="<?= $this->Url->build(['controller' => 'CustomerCategories', 'action' => 'sms']) ?>">短信推广</a></li>
-                        </ul>
+                       <li><a href="<?= $this->Url->build(['controller' => 'Documents', 'action' => 'index']) ?>"><i class="fa fa-dropbox"></i>网盘</a>
+                        
                       </li>
                       <li><a><i class="fa fa-user"></i> 员工 <span class="fa fa-chevron-down"></span></a>
                         <ul class="nav child_menu">

@@ -4,20 +4,30 @@ namespace App\Model\Entity;
 use Cake\ORM\Entity;
 
 /**
- * Dropbox Entity
+ * Document Entity
  *
  * @property int $id
- * @property int $file_id
- * @property int $size
- * @property string $type
  * @property int $user_id
+ * @property string $spell
+ * @property string $origin_name
+ * @property string $name
+ * @property int $size
+ * @property string $ext
+ * @property bool $is_dir
+ * @property int $ord
+ * @property int $level
+ * @property int $parent_id
+ * @property int $lft
+ * @property int $rght
+ * @property bool $deleted
  * @property \Cake\I18n\FrozenTime $created
  * @property \Cake\I18n\FrozenTime $modified
  *
- * @property \App\Model\Entity\File $file
  * @property \App\Model\Entity\User $user
+ * @property \App\Model\Entity\Document $parent_document
+ * @property \App\Model\Entity\Document[] $child_documents
  */
-class Dropbox extends Entity
+class Document extends Entity
 {
 
     /**

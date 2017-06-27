@@ -4,24 +4,27 @@ namespace App\Model\Entity;
 use Cake\ORM\Entity;
 
 /**
- * File Entity
+ * Folder Entity
  *
  * @property int $id
- * @property int $folder_id
+ * @property int $user_id
  * @property string $spell
  * @property string $name
- * @property int $size
- * @property string $type
  * @property int $ord
- * @property int $user_id
+ * @property int $level
+ * @property int $parent_id
+ * @property int $lft
+ * @property int $rght
  * @property bool $deleted
  * @property \Cake\I18n\FrozenTime $created
  * @property \Cake\I18n\FrozenTime $modified
  *
- * @property \App\Model\Entity\Folder $folder
  * @property \App\Model\Entity\User $user
+ * @property \App\Model\Entity\Folder $parent_folder
+ * @property \App\Model\Entity\File[] $files
+ * @property \App\Model\Entity\Folder[] $child_folders
  */
-class File extends Entity
+class Folder extends Entity
 {
 
     /**

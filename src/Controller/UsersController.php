@@ -43,7 +43,7 @@ class UsersController extends AppController
     public function view($id = null)
     {
         $user = $this->Users->get($id, [
-            'contain' => ['Customers', 'Dropboxes', 'Finances', 'ProjectIssueSolutions', 'ProjectIssues', 'ProjectSchedules', 'Projects', 'Tasks', 'UserDepartmentRoles' => function($q){
+            'contain' => ['Customers', 'Documents', 'Finances', 'ProjectIssueSolutions', 'ProjectIssues', 'ProjectSchedules', 'Projects', 'Tasks', 'UserDepartmentRoles' => function($q){
                 return $q->contain(['Departments', 'Roles'])->select(['UserDepartmentRoles.user_id', 'Departments.name', 'Roles.name']);
             }]
         ]);
@@ -60,12 +60,14 @@ class UsersController extends AppController
      */
     public function add()
     {
+        $_user = $this->request->session()->read('Auth')['User'];
         $user = $this->Users->newEntity();
         if ($this->request->is('post')) {
             $user = $this->Users->patchEntity($user, $this->request->getData());
 
             if ($this->Users->save($user)) {
                 $this->loadModel('UserDepartmentRoles');
+                $this->loadModel('Departments');
 
                 for ($i=1; $i <= $this->request->getData('num') ; $i++) { 
                     $position = $this->UserDepartmentRoles->newEntity();
@@ -73,7 +75,45 @@ class UsersController extends AppController
                     $position->department_id = $this->request->getData('department_id_' . $i);
                     $position->role_id = $this->request->getData('role_id_' . $i);
                     $this->UserDepartmentRoles->save($position);
+                    //新建个人文件夹
+                    $crumbs = $this->Departments->find('path',['for' => $position->department_id])
+                        ->select(['id']);
+                    $path = DB_ROOT;
+                    foreach ($crumbs as $value) {
+                        $path .= 'department_' . $value->id . DS;
+                    }
+                    $path .= 'user_' . $user->id;
+                    if(!is_dir($path)) mkdir($path);
+
+                    $this->loadModel('Documents');
+                    $parentFolder = $this->Documents->find('all')
+                        ->where(['name' => 'department_' . $position->department_id])
+                        ->first();
+                    $folder = $this->Documents->newEntity([
+                        'user_id' =>$_user['id'],
+                        'spell' => $this->getALLPY($user->username),
+                        'name' => 'user_' . $user->id,
+                        'origin_name' => $user->username,
+                        'size' => 0,
+                        'ext' => '',
+                        'is_dir' => 1,
+                        'parent_id' => $parentFolder->id,
+                        'level' => 1,
+                        'deleted' => 0
+                    ]); 
+                    $this->Documents->save($folder);
+                    $folder->ord = $this->Documents->find()->where(['is_dir' => 1])->order(['ord' => 'DESC'])->first();
+                    $folder->ord = $folder->ord ? $folder->ord->ord ++ : 1;
+                    $parentFolders = $this->Documents->find()
+                        ->where(['lft < ' => $folder->lft, 'rght > ' => $folder->rght, 'is_dir' => 1]);
+                    foreach ($parentFolders as $value) {
+                        $value->modified = date('Y-m-d H:i:s');
+                        $this->Documents->save($value);
+                    }
+
                 }
+
+               
 
                 $this->Flash->success(__('The user has been saved.'));
                 return $this->redirect(['action' => 'index']);
@@ -82,7 +122,7 @@ class UsersController extends AppController
         }
         $this->loadModel('Departments');
         $this->loadModel('Roles');
-        $departments = $this->Departments->find('list');
+        $departments = $this->Departments->find('list')->where(['parent_id' => 0]);
         $roles = $this->Roles->find('list');
         $this->set(compact('user', 'departments', 'roles'));
         $this->set('_serialize', ['user']);
@@ -97,21 +137,91 @@ class UsersController extends AppController
      */
     public function edit($id = null)
     {
+        $_user = $this->request->session()->read('Auth')['User'];
         $user = $this->Users->get($id, [
             'contain' => ['UserDepartmentRoles']
         ]);
+        $this->loadModel('Departments');
         if ($this->request->is(['patch', 'post', 'put'])) {
             $user = $this->Users->patchEntity($user, $this->request->getData());
 
             if ($this->Users->save($user)) {
+                $this->loadModel('Documents');
                 for ($i=1; $i <= $this->request->getData('num') ; $i++) { 
                     if (isset($_POST['position_id_' . $i])) {
+                        $newDepartmentId = $this->request->getData('department_id_' . $i);
+                        $position = $this->Users->UserDepartmentRoles->get($this->request->getData('position_id_' . $i));
+                        $position->user_id = $user->id;
+                        if ($position->department_id != $newDepartmentId) {
+                            $oldpath = $newpath = DB_ROOT;
+                            $track;
+                            $crumbs = $this->Departments->find('path',['for' => $position->department_id]);
+                            foreach ($crumbs as $crumb) {
+                                $oldpath .= 'department_' . $crumb->id . DS;
+                                $track[] = $crumb->id;
+                            }
+                            $oldpath .= 'user_' . $id;
+
+
+                            $crumbs = $this->Departments->find('path',['for' => $newDepartmentId]);
+                            foreach ($crumbs as $crumb) {
+                                $newpath .= 'department_' . $crumb->id . DS;
+                                $track[] = $crumb->id;
+                            }
+                            $newpath .= 'user_' . $id;
+                            rename($oldpath, $newpath);
+                            $oldFolderPid = $this->Documents->find('all')
+                                ->where(['name' => 'department_' . $position->department_id])
+                                ->first()->id;
+                            $newFolderPid = $this->Documents->find('all')
+                                ->where(['name' => 'department_' . $newDepartmentId])
+                                ->first()->id;
+                            $this->Documents->query()
+                                ->update()
+                                ->set(['parent_id' => $newFolderPid])
+                                ->where(['name' => 'user_' .$id, 'parent_id' => $oldFolderPid])
+                                ->execute();
+                            $track && $this->Documents->query()
+                                ->update()
+                                ->set(['modified' => date('Y-m-d H:i:s')])
+                                ->where(['id in' => $track])
+                                ->execute();
+                            $position->department_id = $newDepartmentId;
+                        }
+                        
+                        $position->role_id = $this->request->getData('role_id_' . $i);
+                        $this->Users->UserDepartmentRoles->save($position);
+                    } else {
                         $position = $this->Users->UserDepartmentRoles->newEntity();
-                        $position->id = $this->request->getData('position_id_' . $i);
                         $position->user_id = $user->id;
                         $position->department_id = $this->request->getData('department_id_' . $i);
                         $position->role_id = $this->request->getData('role_id_' . $i);
                         $this->Users->UserDepartmentRoles->save($position);
+                        //新建个人文件夹
+                        $crumbs = $this->Departments->find('path',['for' => $position->department_id])
+                            ->select(['id']);
+                        $path = DB_ROOT;
+                        foreach ($crumbs as $value) {
+                            $path .= 'department_' . $value->id . DS;
+                        }
+                        $path .= 'user_' . $user->id;
+                        if(!is_dir($path)) mkdir($path);
+
+                        $parentFolder = $this->Documents->find('all')
+                            ->where(['name' => 'department_' . $position->department_id])
+                            ->first();
+                        $folder = $this->Documents->newEntity([
+                            'user_id' =>$_user['id'],
+                            'spell' => $this->getALLPY($user->username),
+                            'name' => 'user_' . $user->id,
+                            'origin_name' => $user->username,
+                            'parent_id' => $parentFolder->id,
+                            'level' => 1,
+                            'deleted' => 0
+                        ]); 
+                        $this->Documents->save($folder);
+                        $folder->ord = $folder->id;
+                        $this->Documents->save($folder);
                     }
                 }
                
@@ -121,7 +231,6 @@ class UsersController extends AppController
             }
             $this->Flash->error(__('The user could not be saved. Please, try again.'));
         }
-        $this->loadModel('Departments');
         $this->loadModel('Roles');
 
         foreach ($user->user_department_roles as &$position) {

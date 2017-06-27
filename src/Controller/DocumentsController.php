@@ -137,6 +137,8 @@ class DocumentsController extends AppController
 
         foreach ($attachments as $file) {
             $resp = $this->uploadFiles('files/' . $path, [$file]);
+            mb_detect_encoding($file['name'], 'UTF-8') === 'UTF-8' &&  $file['name'] = iconv('utf-8','gb2312',$file['name']);
+          print_r($file['name']);exit('sssssss');
             if (array_key_exists('urls', $resp)) {//上传成功
                 !isset($success) && $success = 1;
                 $fileInfo = explode(".", $file['name']);
@@ -173,7 +175,6 @@ class DocumentsController extends AppController
         $result['flag'] = (array_key_exists('success', $data) ? 1 : 0) + (array_key_exists('fail', $data) ? -1 : 0);
         $result['detail'] = $data;
         $this->response->body(json_encode($result));
-        var_dump(json_encode($result));exit('sssssss');
         return $this->response;
     }
 

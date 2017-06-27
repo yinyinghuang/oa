@@ -156,10 +156,9 @@ class DocumentsController extends AppController
                 $this->Documents->save($file);
                 $file->ord = $this->Documents->find()->where(['is_dir' => 0])->order(['ord' => 'DESC'])->first();
                 $file->ord = $file->ord ? $file->ord->ord ++ : 1;
-                $data[$file['name']]['result'] = true;
+                $data['success'][$file['name']] = $resp;
             } else{
-                $data[$file['name']]['result'] = false;
-                $data[$file['name']]['error'] = $resp['errors'][0];
+                $data['fail'][$file['name']] = $resp;
             }
         }
         if (isset($success)) {
@@ -171,8 +170,10 @@ class DocumentsController extends AppController
             ->where(['id in' => $parentFolders])
             ->execute();
         }
-
-        $this->response->body(json_encode($data));
+        $result['flag'] = (array_key_exists('success', $data) ? 1 : 0) + (array_key_exists('fail', $data) ? -1 : 0);
+        $result['detail'] = $data;
+        $this->response->body(json_encode($result));
+        var_dump(json_encode($result));exit('sssssss');
         return $this->response;
     }
 

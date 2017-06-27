@@ -163,16 +163,17 @@
                 contentType: false,
                 success : function(data){
                     data = JSON.parse(data);
-                    if(data.result){
+                    if (data.flag == 1) {
                         $('#attachment').val(data.url);
                         success.html(data.html);
                         $('#upload').attr('disabled', true);
                         error.html('');
                         setTimeout(function(){
-                            $('#close').click();
-
+                            window.reload();
                         },1000);
-                    }else{
+                    } else if (data.flag == 0){
+
+                    } else if (data.flag == -1){
                         success.html('');
                         error.html(data.error);
                     }

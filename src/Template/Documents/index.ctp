@@ -7,12 +7,37 @@
     <nav class="nav">
         <?php if ($parent_id): ?>
             <div class="text-center pull-right">
-                <a href="" class="btn btn-primary"  data-toggle="modal" data-target="#newModal">
+                <a href="" class="btn btn-default"  data-toggle="modal" data-target="#moveModal" id="move">
+                    <i class="fa fa-arrows"></i><span class="hidden-xs">移动到</span>
+                </a>            
+            </div>
+            <div class="text-center pull-right">
+                <a href="" class="btn btn-default"  data-toggle="modal" data-target="#copyModal" id="copy">
+                    <i class="fa fa-clone"></i><span class="hidden-xs">复制到</span>
+                </a>            
+            </div>
+            <div class="text-center pull-right">
+                <a href="" class="btn btn-default"  data-toggle="modal" data-target="#renameModal" id="rename">
+                   <i class="fa fa-edit"></i><span class="hidden-xs">重命名</span>
+                </a>            
+            </div>
+            <div class="text-center pull-right">
+                <a href="" class="btn btn-default" id="delete">
+                    <i class="fa fa-trash"></i><span class="hidden-xs">删除</span>
+                </a>            
+            </div>
+            <div class="text-center pull-right">
+                <a href="" class="btn btn-default" id="download">
+                   <i class="fa fa-cloud-download"></i><span class="hidden-xs">下载</span>
+                </a>            
+            </div>
+            <div class="text-center pull-right">
+                <a href="" class="btn btn-default"  data-toggle="modal" data-target="#newModal" id="newFolder">
                     <i class="fa fa-plus"></i><span class="hidden-xs">新建文件夹</span>
                 </a>            
             </div>
             <div class="text-center pull-right">
-                <a href="" class="btn btn-danger"  data-toggle="modal" data-target="#uploadModal">
+                <a href="" class="btn btn-primary"  data-toggle="modal" data-target="#uploadModal">
                    <i class="fa fa-cloud-upload"></i><span class="hidden-xs">上传文件</span>
                 </a>            
             </div>
@@ -49,19 +74,18 @@
         <tbody>
             <?php foreach ($documents as $document): ?>
             <tr>
-                <td><input type="checkbox" name="itemid[]" value="<?= h($document->id) ?>"></td>
-                <td><a href="<?= $this->Url->build(['action' => 'index', $document->id])?>"><i class="fa fa-<?php if ($document->is_dir): ?>folder-o<?php else: ?><?= $iconArr[$document->ext]?><?php endif ?>" style="padding-right:4px;"></i><?= h($document->origin_name) ?></a></td>
+                <td><input type="checkbox" name="itemid[]" value="<?= h($document->id) ?>" class="itemid" data-sys="<?= $document->is_sys ?>"></td>
+                <td><a href="<?= $this->Url->build(['action' => 'index', $document->id])?>"><i class="fa fa-<?php if ($document->is_dir): ?>folder-o<?php else: ?><?= $iconArr[$document->ext]?><?php endif ?>" style="padding-right:4px;color: #000;"></i><?= h($document->origin_name) ?></a></td>
                 <td><?= h($document->size) ?></td>
                 <td><?= h($document->modified) ?></td>
                 <td class="actions">
-                    <?= $this->Html->link(__('查看'), ['action' => 'index', $document->id]) ?>
                     <?php if ($document->is_dir): ?>
-                    <?= $this->Html->link(__('新建'), ['action' => 'addFolder', $document->id]) ?>
-                    <?= $this->Html->link(__('上传'), ['action' => 'upload', $document->id]) ?>
+                    <a data-toggle="modal" data-target="#newModal" class="new_btn" data-id="<?= $document->id ?>">新建</a>
+                    <a data-toggle="modal" data-target="#uploadModal" class="upload_btn" data-path="<?= $document->name?>" data-id="<?= $document->id ?>">上传</a>
                     <?php else: ?>
-                    <?= $this->Html->link(__('下载'), ['action' => 'download', $document->id]) ?>
+                    <?= $this->Form->postLink(__('下载'), ['action' => 'download', $document->id]) ?>
                     <?php endif ?>
-                    <?= $this->Form->postLink(__('删除'), ['action' => 'delete', $document->id], ['confirm' => __('Are you sure you want to delete {0}?', $document->name)]) ?>
+                    <?= $this->Form->postLink(__('删除'), ['action' => 'delete'], ['confirm' => __('Are you sure you want to delete {0}?', $document->name),'data' => ['itemid' => $document->id]]) ?>
                 </td>
             </tr>  
             <?php endforeach ?>
@@ -101,7 +125,9 @@
                 <h4 class="modal-title" id="uploadModalLabel">上传文件</h4>
             </div>            
             <div class="modal-body">
-                <input type="file" id="file" multiple>               
+                <input type="hidden" id="path">
+                <input type="hidden" id="parent_id">
+                <input type="file" id="file" multiple required>               
                 <div id="uploadSuccess"></div>
                 <div id="uploadError"></div>
             </div>
@@ -121,7 +147,9 @@
                 <h4 class="modal-title" id="newModalLabel">新建文件夹</h4>
             </div>            
             <div class="modal-body">
-                <input type="file" id="file">               
+                <input type="hidden" id="exisit">
+                <label for="filename" class="control-label">文件名</label>
+                <input type="text" id="filename" required>
                 <div id="newSuccess"></div>
                 <div id="newError"></div>
             </div>
@@ -137,23 +165,32 @@
 
 <script type="text/javascript">
     $(function(){
-        var tbody = $('#datatable tbody');        
+        var tbody = $('#datatable tbody'),
+            parent_id = $('#parent_id')[0],
+            path = $('#path')[0];
         tbody.on( 'mouseover', 'tr', function () {
             $(this).hasClass('highlight') ? '' : $(this).addClass( 'highlight' );
         } )
         .on( 'mouseleave', 'tr', function () {
             $(this).hasClass('highlight') ? $(this).removeClass( 'highlight' ) : '';
         });
-        $('#upload').on('click', function(){               
+        $('#file').on('click',function(){
+            $('#upload').attr('disabled', false);
+        });
+        $('#upload').on('click', function(){
+            if ($('#file')[0].files.length < 1) {
+                $('#uploadError').html('<div style="color:red">未选中文件</div>');return false;
+            }
+            $('#upload').attr('disabled', true);               
             var formData = new FormData(),
                 success  = $('#uploadSuccess'),
                 error = $('#uploadError'),
                 filelists = $('#file')[0].files;
-            for (var i in filelists) {
+            for (var i = 0; i < filelists.length; i++) {
                 formData.append('attachment[]', filelists[i]);
             }
-            formData.append('path', "<?= $path ?>");            
-            formData.append('parent_id', "<?= $parent_id ?>");            
+            formData.append('path', "<?= $path ?>" + path.value);            
+            formData.append('parent_id', parent_id.value ? parent_id.value : "<?php if(isset($parent_id) && $parent_id):?><?= $parent_id ?><?php else: ?>0<?php endif?>");            
             $.ajax({
                 type : 'post',
                 url : '<?= $this->Url->build([ 'action' => 'upload']) ?>',
@@ -164,26 +201,92 @@
                 success : function(data){
                     data = JSON.parse(data);
                     if (data.flag == 1) {
-                        $('#attachment').val(data.url);
-                        success.html(data.html);
-                        $('#upload').attr('disabled', true);
                         error.html('');
-                        setTimeout(function(){
-                            window.reload();
-                        },1000);
-                    } else if (data.flag == 0){
-
-                    } else if (data.flag == -1){
-                        success.html('');
-                        error.html(data.error);
+                        window.location.reload();
+                    } else {
+                        error.html(data.html);
                     }
                 },
                 error : function(data){
-                    alert(data.responseText);
+                    console.log(data.responseText);
                 }
             });
         });
+        $('.upload_btn').on('click',function(){
+            parent_id.value = $(this).data('id');
+            path.value = $(this).data('path');
+        });
+        $('#filename').on('input', function(){
+            exisit = document.getElementById('exisit');
+            var that = this,
+                timer = null;
+            clearTimeout(timer);
+            timer = setTimeout(function(){
+                $.ajax({
+                    type : 'get',
+                    url : '<?= $this->Url->build([ 'action' => 'identicalName']) ?>',
+                    data : {
+                        filename : that.value,
+                        parent_id : parent_id.value ? parent_id.value : "<?php if(isset($parent_id) && $parent_id):?><?= $parent_id ?><?php else: ?>0<?php endif?>"
+                    },
+                    success : function(data){
+                        if (data > 0) {
+                            exisit.value = 1;
+                            $('#newError').html('<div style="color:red">文件夹名已存在</div>');
+                        } else {
+                            $('#newError').html('');
+                            exisit.value = 0;
+                        }
+                    },
+                    error : function(data){
+                        console.log(data.responseText);
+                    }
+                });
+            },300);
+        });
 
+        $('#new').on('click', function(){
+            var filename = $('#filename')[0].value;
+            if (filename == '') {
+                $('#newError').html('<div style="color:red">请填写文件夹名</div>');return false;
+            } 
+            if ($('#exisit').val() == 1) {
+                $('#newError').html('<div style="color:red">文件夹名已存在</div>');return false;
+            }               
+            $('#new').attr('disabled', true);
+            var success  = $('#newSuccess'),
+                error = $('#newError'),
+                data = {
+                    path : "<?= $path ?>" + path.value,
+                    parent_id :  parent_id.value ? parent_id.value : "<?php if(isset($parent_id) && $parent_id):?><?= $parent_id ?><?php else: ?>0<?php endif?>",
+                    filename : filename
+                };           
+            $.ajax({
+                type : 'post',
+                url : '<?= $this->Url->build([ 'action' => 'newFolder']) ?>',
+                data : data,
+                success : function(data){
+                    if (data == 1) {
+                        window.location.reload();
+                    } else if(data == -1) {
+                        error.html('文件夹名不能为空');
+                    } else if(data == -1) {
+                        error.html('文件夹创建失败');
+                    }
+                },
+                error : function(data){
+                    console.log(data.responseText);
+                }
+            });
+        });
+        $('.new_btn').on('click',function(){
+            parent_id.value = $(this).data('id');
+            path.value = $(this).data('path');
+        });
+        $('#selectAll').on('click',function(){
+            $('.itemid').prop('checked', this.checked);
+            $('#newFolder,#rename,#move').attr('disabled', true);
+        });
     });
 </script>
 <?= $this->end() ?>

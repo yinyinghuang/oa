@@ -152,21 +152,21 @@ class UsersController extends AppController
                         $newDepartmentId = $this->request->getData('department_id_' . $i);
                         $position = $this->Users->UserDepartmentRoles->get($this->request->getData('position_id_' . $i));
                         $position->user_id = $user->id;
-                        if ($position->department_id != $newDepartmentId) {
+                        if ($position->department_id != $newDepartmentId) {//部门改变
                             $oldpath = $newpath = DB_ROOT;
                             $track;
                             $crumbs = $this->Departments->find('path',['for' => $position->department_id]);
                             foreach ($crumbs as $crumb) {
                                 $oldpath .= 'department_' . $crumb->id . DS;
-                                $track[] = $crumb->id;
+                                $track['old'] = $crumb->id;
                             }
                             $oldpath .= 'user_' . $id;
-
+                            $size = $this->Documents->getDirSize($oldpath);
 
                             $crumbs = $this->Departments->find('path',['for' => $newDepartmentId]);
                             foreach ($crumbs as $crumb) {
                                 $newpath .= 'department_' . $crumb->id . DS;
-                                $track[] = $crumb->id;
+                                $track['new'] = $crumb->id;
                             }
                             $newpath .= 'user_' . $id;
                             rename($oldpath, $newpath);
@@ -183,8 +183,13 @@ class UsersController extends AppController
                                 ->execute();
                             $track && $this->Documents->query()
                                 ->update()
-                                ->set(['modified' => date('Y-m-d H:i:s')])
-                                ->where(['id in' => $track])
+                                ->set(['modified' => date('Y-m-d H:i:s'), "size=size - $size"])
+                                ->where(['id in' => $track['old']])
+                                ->execute();
+                            $track && $this->Documents->query()
+                                ->update()
+                                ->set(['modified' => date('Y-m-d H:i:s'), "size=size + $size"])
+                                ->where(['id in' => $track['new']])
                                 ->execute();
                             $position->department_id = $newDepartmentId;
                         }

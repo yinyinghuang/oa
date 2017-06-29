@@ -10,6 +10,7 @@ use Cake\Routing\Router;
  *
  * @method \App\Model\Entity\Document[] paginate($object = null, array $settings = [])
  */
+
 class DocumentsController extends AppController
 {
 
@@ -22,19 +23,22 @@ class DocumentsController extends AppController
     {
         $iconArr = ['png' => 'image', 'gif' => 'image', 'jpg' => 'image', 'xls' => 'file-excel-o', 'xlsx' => 'file-excel-o', 'doc' => 'file-word-o', 'docx' => 'file-word-o', 'pdf' => 'file-pdf-o', 'ppt' => 'file-powerpoint-o', 'zip' => 'file-zip-o', 'txt' => 'file-text-o' ];
         $this->paginate = [
-            'conditions' => ['Documents.parent_id' => $parent_id]
+            'conditions' => ['Documents.parent_id' => $parent_id],
+            'order' => ['Documents.is_dir' => 'DESC','Documents.modified' => 'DESC']
         ];
         $documents = $this->paginate($this->Documents);
         foreach ($documents as $value) {
             $value->size = $this->getRealSize($value->size);
         }
+        $path = '/';
         if($parent_id){
-            $path = '/dropboxes/';
+            $path .= 'dropboxes/';
             $crumbs = $this->Documents->find('path',['for' => $parent_id]);
             foreach ($crumbs as $crumb) {
                 $path .= $crumb->name . '/' ;
             }
         }
+
         $this->set(compact('documents','parent_id','crumbs', 'path', 'iconArr'));
         $this->set('_serialize', ['documents']);
     }
@@ -113,17 +117,24 @@ class DocumentsController extends AppController
      * @return \Cake\Http\Response|null Redirects to index.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function delete($id = null)
+    public function delete()
     {
         $this->request->allowMethod(['post', 'delete']);
-        $document = $this->Documents->get($id);
-        if ($this->Documents->delete($document)) {
-            $this->Flash->success(__('The document has been deleted.'));
-        } else {
-            $this->Flash->error(__('The document could not be deleted. Please, try again.'));
+        $itemid = $this->request->getData('itemid');
+        !is_array($itemid) && $itemid = [$itemid];
+        foreach ($itemid as $id) {
+          $document = $this->Documents->get($id);
+          $path = $this->Documents->find('path',['for' => $id])->extract('name')->toArray();
+          $path = DB_ROOT . implode('\\', $path);
+          if (is_file($path)) {
+            unlink($path);
+          } else {
+            $this->deleteDir($path);
+          }
         }
-
-        return $this->redirect(['action' => 'index']);
+        $this->Documents->deleteAll(['id in ' => $itemid]);     
+        
+        return $this->redirect($this->referer());
     }
 
     public function upload(){
@@ -133,20 +144,19 @@ class DocumentsController extends AppController
         $attachments = $this->request->data['attachment'];
         $parent_id = $this->request->getData('parent_id');
 
-        $data = [];
-
+        $data = $result = [];
+        $result['html'] = '';
+        $newContent = 0;
         foreach ($attachments as $file) {
-            $resp = $this->uploadFiles('files/' . $path, [$file]);
-            mb_detect_encoding($file['name'], 'UTF-8') === 'UTF-8' &&  $file['name'] = iconv('utf-8','gb2312',$file['name']);
-          print_r($file['name']);exit('sssssss');
+            $resp = $this->uploadFiles('files' . $path, [$file]);
             if (array_key_exists('urls', $resp)) {//上传成功
-                !isset($success) && $success = 1;
+                $newContent += $file['size'];
                 $fileInfo = explode(".", $file['name']);
                 $fileExtension = end($fileInfo);
                 $file = $this->Documents->newEntity([
                     'user_id' =>$_user['id'],
                     'spell' => $this->getALLPY($file['name']),
-                    'name' => $file['name'],
+                    'name' => $resp['names'][0],
                     'origin_name' => $file['name'],
                     'size' => $file['size'],
                     'ext' => $fileExtension,
@@ -158,26 +168,156 @@ class DocumentsController extends AppController
                 $this->Documents->save($file);
                 $file->ord = $this->Documents->find()->where(['is_dir' => 0])->order(['ord' => 'DESC'])->first();
                 $file->ord = $file->ord ? $file->ord->ord ++ : 1;
-                $data['success'][$file['name']] = $resp;
+                $this->Documents->save($file);
+                // $data['success']['num'] ++;
             } else{
                 $data['fail'][$file['name']] = $resp;
+                isset($data['fail']['num']) ? $data['fail']['num'] ++ : $data['fail']['num'] = 1;
+                $result['html'] .= '<li>' . $file['name'] . '： ' . $resp['errors'][0] . '</li>';
             }
         }
-        if (isset($success)) {
+        if ($newContent) {
             $parentFolders = $this->Documents->find('path',['for' => $parent_id])->where(['is_dir' => 1])
                 ->extract('id')->toArray();
              $this->Documents->query()
             ->update()
-            ->set(['modified' => date('Y-m-d H:i:s')])
+            ->set(['modified' => date('Y-m-d H:i:s'),"size=size + $newContent"])
             ->where(['id in' => $parentFolders])
             ->execute();
         }
-        $result['flag'] = (array_key_exists('success', $data) ? 1 : 0) + (array_key_exists('fail', $data) ? -1 : 0);
+        $result['num'] = count($attachments);
+        $result['flag'] = 1;
+        if (array_key_exists('fail', $data)) {
+          $result['flag'] --;
+          $result['html'] = '<div class="alert alert-danger"><div>失败个数：' . $data['fail']['num'] . '</div><div>失败列表：</div><ul>' . $result['html'] . '</ul></div>';
+
+        }
         $result['detail'] = $data;
         $this->response->body(json_encode($result));
         return $this->response;
     }
 
+    public function newFolder(){
+      $_user = $this->request->session()->read('Auth')['User'];
+      $this->request->allowMethod(['post']);
+      $data;
+      $path = $this->request->data['path'];
+      $filename = $this->request->data['filename'];
+      if ($filename == '') {
+        $data = -1;
+        $this->response->body($data);
+        return $this->response;
+      }
+      $parent_id = $this->request->getData('parent_id');
+
+      $spell = $this->getALLPY($filename);
+      $folder = $this->Documents->newEntity([
+          'user_id' =>$_user['id'],
+          'spell' => $spell,
+          'name' => $spell,
+          'origin_name' => $filename,
+          'size' => 0,
+          'ext' => '',
+          'is_dir' => 1,
+          'parent_id' => $parent_id,
+          'level' => 1,
+          'deleted' => 0
+      ]); 
+      $this->Documents->save($folder);
+      $folder->ord = $this->Documents->find()->where(['is_dir' => 1])->order(['ord' => 'DESC'])->first();
+      $folder->ord = $folder->ord ? $folder->ord->ord ++ : 1;
+      $folder->name .= '_' . $folder->id;
+      $this->Documents->save($folder);
+
+      $parentFolders = $this->Documents->find('path',['for' => $parent_id])->where(['is_dir' => 1])
+          ->combine('id','name')->toArray();
+      $path = DB_ROOT . implode('\\', $parentFolders) . '\\' . $folder->name;
+      if(!is_dir($path)){
+        if (!mkdir($path)) {
+          $data = -2;
+          $this->response->body($path);
+          return $this->response;
+        }
+      }
+        
+       $this->Documents->query()
+      ->update()
+      ->set(['modified' => date('Y-m-d H:i:s')])
+      ->where(['id in' => array_keys($parentFolders)])
+      ->execute();
+      $data = 1;
+      $this->response->body($data);
+      return $this->response;
+    }
+
+    public function rename($id)
+    {
+      $_user = $this->request->session()->read('Auth')['User'];
+      $this->request->allowMethod(['post']);
+      $path = $this->request->data['name'];
+      
+
+      $document = $this->Documents->get($id);
+      if ($name != $document->name) {
+        $crumbs = $this->Documents->find('path',['for' => $document->parent_id])->combine('id','name')->toArray();
+        $path = DB_ROOT .implode(DS, $crumbs);
+        $oldname = $path . DS . $document->name;
+        $newname = $path . DS . $name . DS . ($document->ext ? '.' . $document->ext : '');
+        rename($oldname, $newname);
+
+        $document->spell = $this->getALLPY($name);
+        $document->origin_name = $document->origin_name = $name;
+        $this->Documents->save($document);
+
+         $this->Documents->query()
+        ->update()
+        ->set(['modified' => date('Y-m-d H:i:s')])
+        ->where(['id in' => array_keys($crumbs)])
+        ->execute();
+      }
+    }
+
+    public function download($id)
+    {
+      $_user = $this->request->session()->read('Auth')['User'];
+      $this->request->allowMethod(['post']);
+
+      $document = $this->Documents->get($id);
+
+      $crumbs = $this->Documents->find('path',['for' => $document->id])->combine('id','name')->toArray();
+      $path = DB_ROOT .implode(DS, $crumbs);
+
+      //检查文件是否存在    
+      if (! file_exists ($path)) {           
+          $this->Flash->error('资源不存在');   
+          return $this->redirect($this->referer());   
+      } else {    
+          //打开文件    
+          $file = fopen ($path, "r" );    
+          //输入文件标签     
+          Header ( "Content-type: application/octet-stream" );    
+          Header ( "Accept-Ranges: bytes" );    
+          Header ( "Accept-Length: " . filesize ($path) );    
+          Header ( "Content-Disposition: attachment; filename=" . $document->name );    
+          //输出文件内容     
+          //读取文件内容并直接输出到浏览器    
+          echo fread ( $file, filesize ($path) );    
+          fclose ( $file ); 
+          $this->Flash->success('下载成功');   
+          return $this->redirect($this->referer());   
+      }
+    }
+
+
+    
+    public function identicalName($value='')
+    {
+      $is_exisit = $this->Documents->find()
+        ->where(['origin_name' => $this->request->query('filename'), 'parent_id' => $this->request->query('parent_id'),'is_dir' => 1])
+        ->count();
+      $this->response->body($is_exisit);
+      return $this->response;
+    }
     private function getDirSize($dir)
      { 
       $handle = opendir($dir);
@@ -225,5 +365,26 @@ class DocumentsController extends AppController
           { 
            return round($size/$tb,2)." TB";
           }
+    }  
+    public function deleteDir($path){
+        if(!is_dir($path)) return true;
+        $handle = opendir($path);
+        if ($handle) {
+            while (false !== ( $item = readdir($handle) )) {
+                if ($item != "." && $item != "..")
+                    is_dir("$path/$item") ? $this->deleteDir("$path/$item") : unlink("$path/$item");
+            }
+            closedir($handle);
+            return rmdir($path);
+        }else {
+            if (file_exists($path)) {
+                return unlink($path);
+            } else {
+                return FALSE;
+            }
+        }
     }
+
+
+
 }

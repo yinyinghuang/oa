@@ -154,8 +154,8 @@ class AppController extends Controller
 
         // list of permitted file types, this is only images but documents can be added
         $permitted = array('xls','xlsx', 'png', 'jpg', 'gif','doc','docx','pdf','ppt','zip','txt');
-
         // loop through and deal with the files
+
         foreach ($formdata as $file) {
             $filename = str_replace(' ', '_', $file['name']);
             $fileInfo = explode(".", $filename);
@@ -173,28 +173,31 @@ class AppController extends Controller
             // if file type ok upload the file
             if ($typeOK) {
                 // switch based on error code
-                $filename = iconv('utf-8','gb2312',$filename);
+                $filename_gbk = iconv('utf-8','gb2312',$filename);
                 switch ($file['error']) {
                     case 0:
                         // check filename already exists
                         if (!file_exists($folder_url . '/' . $filename)) {
                             // create full filename
-                            $full_url = $folder_url . '/' . $filename;
+                            $full_url = $folder_url . '/' . $filename_gbk;
                             $url = $rel_url . '/' . $filename;
+                            $name = $filename;
                             // upload the file
                             $success = move_uploaded_file($file['tmp_name'], $full_url);
                         } else {
                             // create unique filename and upload file
                             ini_set('date.timezone', 'Europe/London');
                             $now = date('Y-m-d-His');
-                            $full_url = $folder_url . '/' . $now . $filename;
+                            $full_url = $folder_url . '/' . $now . $filename_gbk;
                             $url = $rel_url . '/' . $now . $filename;
+                            $name = $now . $filename;
                             $success = move_uploaded_file($file['tmp_name'], $full_url);
                         }
                         // if upload was successful
                         if ($success) {
                             // save the url of the file
                             $result['urls'][] = $url;
+                            $result['names'][] = $name;
                         } else {
                             $result['errors'][] = "Error uploaded $filename. Please try again.";
                         }
@@ -210,10 +213,10 @@ class AppController extends Controller
                 }
             } elseif ($file['error'] == 4) {
                 // no file was selected for upload
-                $result['nofiles'][] = "No file Selected";
+                $result['nofiles'][] = "未选中文件";
             } else {
                 // unacceptable file type
-                $result['errors'][] = "$filename cannot be uploaded.";
+                $result['errors'][] = "不支持该类型文件上传";
             }
         }
         return $result;
@@ -305,22 +308,5 @@ class AppController extends Controller
        }
        return implode($delimiter, $result);
     }
-    public function deleteDir($path){
-        if(!is_dir($path)) return true;
-        $handle = opendir($path);
-        if ($handle) {
-            while (false !== ( $item = readdir($handle) )) {
-                if ($item != "." && $item != "..")
-                    is_dir("$path/$item") ? $this->deleteDir("$path/$item") : unlink("$path/$item");
-            }
-            closedir($handle);
-            return rmdir($path);
-        }else {
-            if (file_exists($path)) {
-                return unlink($path);
-            } else {
-                return FALSE;
-            }
-        }
-    }
+    
 }

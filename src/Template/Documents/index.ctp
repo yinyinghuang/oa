@@ -75,17 +75,21 @@
             <?php foreach ($documents as $document): ?>
             <tr>
                 <td><input type="checkbox" name="itemid[]" value="<?= h($document->id) ?>" class="itemid" data-sys="<?= $document->is_sys ?>"></td>
-                <td><a href="<?= $this->Url->build(['action' => 'index', $document->id])?>"><i class="fa fa-<?php if ($document->is_dir): ?>folder-o<?php else: ?><?= $iconArr[$document->ext]?><?php endif ?>" style="padding-right:4px;color: #000;"></i><?= h($document->origin_name) ?></a></td>
+                <td><a href="<?= $this->Url->build(['action' => 'index', 'pid' => $document->id])?>"><i class="fa fa-<?php if ($document->is_dir): ?>folder-o<?php else: ?><?= $iconArr[$document->ext]?><?php endif ?>" style="padding-right:4px;color: #000;"></i><?= h($document->origin_name) ?></a></td>
                 <td><?= h($document->size) ?></td>
                 <td><?= h($document->modified) ?></td>
                 <td class="actions">
                     <?php if ($document->is_dir): ?>
-                    <a data-toggle="modal" data-target="#newModal" class="new_btn" data-id="<?= $document->id ?>">新建</a>
+                    <?php if ($document->is_sys): ?>
+                    <a data-toggle="modal" data-target="#newModal" class="new_btn" data-id="<?= $document->id ?>">新建</a>    
+                    <?php endif ?>
                     <a data-toggle="modal" data-target="#uploadModal" class="upload_btn" data-path="<?= $document->name?>" data-id="<?= $document->id ?>">上传</a>
                     <?php else: ?>
                     <?= $this->Form->postLink(__('下载'), ['action' => 'download', $document->id]) ?>
                     <?php endif ?>
-                    <?= $this->Form->postLink(__('删除'), ['action' => 'delete'], ['confirm' => __('Are you sure you want to delete {0}?', $document->name),'data' => ['itemid' => $document->id]]) ?>
+                    <?php if (!$document->is_sys): ?>
+                    <?= $this->Form->postLink(__('删除'), ['action' => 'delete'], ['confirm' => __('Are you sure you want to delete {0}?', $document->name),'data' => ['itemid' => $document->id]]) ?>    
+                    <?php endif ?>
                 </td>
             </tr>  
             <?php endforeach ?>

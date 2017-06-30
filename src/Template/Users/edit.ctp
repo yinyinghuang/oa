@@ -28,7 +28,7 @@
                 echo '<div id="add-' . $k . '">';
                 echo $this->Form->control('position_id_' . $k, ['type' => 'hidden', 'value' => $position->id, 'class' => 'position_id']);
                 echo '<div class="input select required">';
-                echo '<input type="hidden" name="department_' . $k . '" class="department">';
+                echo '<input type="hidden" name="department_' . $k . '" class="department" value="'. $position->department_id .'">';
                 echo '<label for="department-id-' . $k . '">部门' . $k . '</label>';
                 foreach ($position->departmentList as $department) {
                     echo $this->Form->select('department_id_' . $k . '', $department->options, ['required' => true, 'empty' => '请选择', 'class' => 'parent_id','value' => $department->id]);
@@ -57,7 +57,7 @@
         add.on('click', function(){
             var num = $('#num'),
                 i = num.val() * 1 + 1,
-                html = '<div id="add-' + i + '"><input type="hidden" class="position_id"><div class="input select required"><input type="hidden" name="department_' + i + '" class="department"><label for="department-id-' + i + '">部门  ' + i + '</label><select name="department_id_' + i + '" id="department-id-' + i + '" required onChange="loadChilds(this)"><option value="">请选择</option><?php foreach ($departments as $key => $value): ?><option value="<?= $key ?>"><?= $value ?></option><?php endforeach ?></select></div><div class="input select required"><label for="role-id-' + i + '">Role Id  ' + i + '</label><select name="role_id_' + i + '" id="role-id-' + i + '" required><option value="">请选择</option><?php foreach ($roles as $key => $value): ?><option value="<?= $key ?>"><?= $value ?></option><?php endforeach ?></select><a class="btn btn-danger del" onClick="deletePosition(this);">删除</a></div></div>';
+                html = '<div id="add-' + i + '"><input type="hidden" class="position_id"><div class="input select required"><input type="hidden" name="department_' + i + '" class="department"><label for="department-id-' + i + '">部门  ' + i + '</label><select name="department_id_' + i + '" id="department-id-' + i + '" required onChange="loadChilds(this)"><option value="">请选择</option><?php foreach ($departments as $key => $value): ?><option value="<?= $key ?>"><?= $value ?></option><?php endforeach ?></select></div><div class="input select required"><label for="role-id-' + i + '">Role Id  ' + i + '</label><select name="role_id_' + i + '" id="role-id-' + i + '" required><option value="">请选择</option><?php foreach ($roles as $key => $value): ?><option value="<?= $key ?>"><?= $value ?></option><?php endforeach ?></select></div><a class="btn btn-danger del" onClick="deletePosition(this);">删除</a></div>';
             add.before(html);
             num.val(i);
         });
@@ -103,7 +103,7 @@
     function deletePosition(node){
         var num = $('#num'),
             i = num.val() * 1,
-            id = $(node).parent('div').siblings('.position_id')[0].value,
+            id = $(node).siblings('.position_id')[0].value,
             parent =  $(node).parent('div');
         if(confirm('确定要删除此部门职位？')){
             if (id !== '') {

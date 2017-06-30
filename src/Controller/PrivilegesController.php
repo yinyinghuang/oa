@@ -54,7 +54,6 @@ class PrivilegesController extends AppController
     {
         $privilege = $this->Privileges->newEntity();
         if ($this->request->is('post')) {
-            $privilege->type = $this->request->getData('type');
             $privilege->who = $this->request->getData('who');
             $privilege->what = $this->request->getData('what');
             $privilege->how = implode('',$this->request->getData('how'));

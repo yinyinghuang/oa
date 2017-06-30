@@ -42,7 +42,9 @@ class DocumentsTable extends Table
         $this->setPrimaryKey('id');
 
         $this->addBehavior('Timestamp');
-        $this->addBehavior('Tree');
+        $this->addBehavior('Tree',[
+            'level' => 'depth'
+        ]);
 
         $this->belongsTo('Users', [
             'foreignKey' => 'user_id',
@@ -120,7 +122,7 @@ class DocumentsTable extends Table
      */
     public function buildRules(RulesChecker $rules)
     {
-        $rules->add($rules->existsIn(['user_id'], 'Users'));
+        // $rules->add($rules->existsIn(['user_id'], 'Users'));
         // $rules->add($rules->existsIn(['parent_id'], 'ParentDocuments'));
 
         return $rules;

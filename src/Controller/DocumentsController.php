@@ -19,28 +19,56 @@ class DocumentsController extends AppController
      *
      * @return \Cake\Http\Response|null
      */
-    public function index($parent_id = 0)
+    public function index()
     {
-        $iconArr = ['png' => 'image', 'gif' => 'image', 'jpg' => 'image', 'xls' => 'file-excel-o', 'xlsx' => 'file-excel-o', 'doc' => 'file-word-o', 'docx' => 'file-word-o', 'pdf' => 'file-pdf-o', 'ppt' => 'file-powerpoint-o', 'zip' => 'file-zip-o', 'txt' => 'file-text-o' ];
-        $this->paginate = [
-            'conditions' => ['Documents.parent_id' => $parent_id],
-            'order' => ['Documents.is_dir' => 'DESC','Documents.modified' => 'DESC']
-        ];
-        $documents = $this->paginate($this->Documents);
-        foreach ($documents as $value) {
-            $value->size = $this->getRealSize($value->size);
-        }
-        $path = '/';
-        if($parent_id){
-            $path .= 'dropboxes/';
-            $crumbs = $this->Documents->find('path',['for' => $parent_id]);
-            foreach ($crumbs as $crumb) {
-                $path .= $crumb->name . '/' ;
-            }
-        }
+      $_user = $this->request->session()->read('Auth')['User'];
+      $this->loadModel('UserDepartmentRoles');
+      $this->loadModel('Departments');
+      $positions = $this->UserDepartmentRoles->findByUserId($_user['id']);
+      $conditions = null;
+      $parent_id = isset($_GET['pid']) && isset($_GET['pid']) != 0 ? $_GET['pid'] : 0;
+      $conditions['Documents.parent_id'] = $parent_id;
 
-        $this->set(compact('documents','parent_id','crumbs', 'path', 'iconArr'));
-        $this->set('_serialize', ['documents']);
+      foreach ($positions as $value) {
+        switch ($value->role_id) {
+          case '1'://只看自己上传的，只看自己的文件夹，或者是部门共享文件，或者公司共享文件
+            $parentDepartments = $this->Departments->find('path',['for' => $value->department_id])
+              ->extract('id')
+              ->toArray();
+            $conditions['OR'][] = ['Documents.user_id' => $_user['id']];
+            $conditions['OR'][] = ['Documents.name' => 'user_' . $_user['id']];
+            $conditions['OR'][] = ['Documents.level' => 0, 'Documents.department_id in ' => $parentDepartments];
+          break;
+          case '2'://部门文件，或者公司共享文件
+            $parentDepartments = $this->Departments->find('path',['for' => $value->department_id])
+              ->extract('id')
+              ->toArray();
+            $conditions['OR'][] = ['Documents.level <' => 2, 'Documents.department_id in' => $parentDepartments];
+          break;
+        }
+      }
+      $conditions['OR'][] = ['Documents.level' => -1];
+       
+      $iconArr = ['png' => 'image', 'gif' => 'image', 'jpg' => 'image', 'xls' => 'file-excel-o', 'xlsx' => 'file-excel-o', 'doc' => 'file-word-o', 'docx' => 'file-word-o', 'pdf' => 'file-pdf-o', 'ppt' => 'file-powerpoint-o', 'zip' => 'file-zip-o', 'txt' => 'file-text-o' ];
+      $this->paginate = [
+          'conditions' => ['Documents.parent_id' => $parent_id] + $conditions,
+          'order' => ['Documents.is_dir' => 'DESC','Documents.modified' => 'DESC']
+      ];
+      $documents = $this->paginate($this->Documents);
+      foreach ($documents as $value) {
+          $value->size = $this->getRealSize($value->size);
+      }
+      $path = '/';
+      if($parent_id){
+          $path .= 'dropboxes/';
+          $crumbs = $this->Documents->find('path',['for' => $parent_id]);
+          foreach ($crumbs as $crumb) {
+              $path .= $crumb->name . '/' ;
+          }
+      }
+
+      $this->set(compact('documents','parent_id','crumbs', 'path', 'iconArr'));
+      $this->set('_serialize', ['documents']);
     }
 
     /**
@@ -143,6 +171,7 @@ class DocumentsController extends AppController
         $path = $this->request->data['path'];
         $attachments = $this->request->data['attachment'];
         $parent_id = $this->request->getData('parent_id');
+        $parentFolder = $this->Documents->get($parent_id);
 
         $data = $result = [];
         $result['html'] = '';
@@ -162,7 +191,7 @@ class DocumentsController extends AppController
                     'ext' => $fileExtension,
                     'is_dir' => 0,
                     'parent_id' => $parent_id,
-                    'level' => 1,
+                    'level' => $parentFolder->level,
                     'deleted' => 0
                 ]); 
                 $this->Documents->save($file);
@@ -209,6 +238,7 @@ class DocumentsController extends AppController
         return $this->response;
       }
       $parent_id = $this->request->getData('parent_id');
+      $parentFolder = $this->Documents->get($parent_id);
 
       $spell = $this->getALLPY($filename);
       $folder = $this->Documents->newEntity([
@@ -220,7 +250,7 @@ class DocumentsController extends AppController
           'ext' => '',
           'is_dir' => 1,
           'parent_id' => $parent_id,
-          'level' => 1,
+          'level' => $parentFolder->level,
           'deleted' => 0
       ]); 
       $this->Documents->save($folder);
@@ -318,73 +348,5 @@ class DocumentsController extends AppController
       $this->response->body($is_exisit);
       return $this->response;
     }
-    private function getDirSize($dir)
-     { 
-      $handle = opendir($dir);
-      while (false!==($FolderOrFile = readdir($handle)))
-      { 
-       if($FolderOrFile != "." && $FolderOrFile != "..") 
-       { 
-        if(is_dir("$dir/$FolderOrFile"))
-        { 
-         $sizeResult += getDirSize("$dir/$FolderOrFile"); 
-        }
-        else
-        { 
-         $sizeResult += filesize("$dir/$FolderOrFile"); 
-        }
-       } 
-      }
-      closedir($handle);
-      return $sizeResult;
-    }
-     // 单位自动转换函数
-    private function getRealSize($size)
-    { 
-          $kb = 1024;   // Kilobyte
-          $mb = 1024 * $kb; // Megabyte
-          $gb = 1024 * $mb; // Gigabyte
-          $tb = 1024 * $gb; // Terabyte
-          if($size < $kb)
-          { 
-           return $size." B";
-          }
-          else if($size < $mb)
-          { 
-           return round($size/$kb,2)." KB";
-          }
-          else if($size < $gb)
-          { 
-           return round($size/$mb,2)." MB";
-          }
-          else if($size < $tb)
-          { 
-           return round($size/$gb,2)." GB";
-          }
-          else
-          { 
-           return round($size/$tb,2)." TB";
-          }
-    }  
-    public function deleteDir($path){
-        if(!is_dir($path)) return true;
-        $handle = opendir($path);
-        if ($handle) {
-            while (false !== ( $item = readdir($handle) )) {
-                if ($item != "." && $item != "..")
-                    is_dir("$path/$item") ? $this->deleteDir("$path/$item") : unlink("$path/$item");
-            }
-            closedir($handle);
-            return rmdir($path);
-        }else {
-            if (file_exists($path)) {
-                return unlink($path);
-            } else {
-                return FALSE;
-            }
-        }
-    }
-
-
 
 }

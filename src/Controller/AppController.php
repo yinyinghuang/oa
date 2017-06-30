@@ -157,67 +157,67 @@ class AppController extends Controller
         // loop through and deal with the files
 
         foreach ($formdata as $file) {
-            $filename = str_replace(' ', '_', $file['name']);
-            $fileInfo = explode(".", $filename);
-            $fileExtension = end($fileInfo);
-            $typeOK = false;
-            // check filetype is ok
-//            debug ($file['type']);
-            foreach ($permitted as $type) {
-                if ($type == $fileExtension) {
-                    $typeOK = true;
-                    break;
-                }
-            }
+          $filename = str_replace(' ', '_', $file['name']);
+          $fileInfo = explode(".", $filename);
+          $fileExtension = end($fileInfo);
+          $typeOK = false;
+          // check filetype is ok
+          // debug ($file['type']);
+          foreach ($permitted as $type) {
+              if ($type == $fileExtension) {
+                  $typeOK = true;
+                  break;
+              }
+          }
 
-            // if file type ok upload the file
-            if ($typeOK) {
-                // switch based on error code
-                $filename_gbk = iconv('utf-8','gb2312',$filename);
-                switch ($file['error']) {
-                    case 0:
-                        // check filename already exists
-                        if (!file_exists($folder_url . '/' . $filename)) {
-                            // create full filename
-                            $full_url = $folder_url . '/' . $filename_gbk;
-                            $url = $rel_url . '/' . $filename;
-                            $name = $filename;
-                            // upload the file
-                            $success = move_uploaded_file($file['tmp_name'], $full_url);
-                        } else {
-                            // create unique filename and upload file
-                            ini_set('date.timezone', 'Europe/London');
-                            $now = date('Y-m-d-His');
-                            $full_url = $folder_url . '/' . $now . $filename_gbk;
-                            $url = $rel_url . '/' . $now . $filename;
-                            $name = $now . $filename;
-                            $success = move_uploaded_file($file['tmp_name'], $full_url);
-                        }
-                        // if upload was successful
-                        if ($success) {
-                            // save the url of the file
-                            $result['urls'][] = $url;
-                            $result['names'][] = $name;
-                        } else {
-                            $result['errors'][] = "Error uploaded $filename. Please try again.";
-                        }
-                        break;
-                    case 3:
-                        // an error occured
-                        $result['errors'][] = "Error uploading $filename. Please try again.";
-                        break;
-                    default:
-                        // an error occured
-                        $result['errors'][] = "System error uploading $filename. Contact webmaster.";
-                        break;
-                }
-            } elseif ($file['error'] == 4) {
-                // no file was selected for upload
-                $result['nofiles'][] = "未选中文件";
-            } else {
-                // unacceptable file type
-                $result['errors'][] = "不支持该类型文件上传";
+          // if file type ok upload the file
+          if ($typeOK) {
+            // switch based on error code
+            $filename_gbk = iconv('utf-8','gb2312',$filename);
+            switch ($file['error']) {
+                case 0:
+                    // check filename already exists
+                    if (!file_exists($folder_url . '/' . $filename)) {
+                        // create full filename
+                        $full_url = $folder_url . '/' . $filename_gbk;
+                        $url = $rel_url . '/' . $filename;
+                        $name = $filename;
+                        // upload the file
+                        $success = move_uploaded_file($file['tmp_name'], $full_url);
+                    } else {
+                        // create unique filename and upload file
+                        ini_set('date.timezone', 'Europe/London');
+                        $now = date('Y-m-d-His');
+                        $full_url = $folder_url . '/' . $now . $filename_gbk;
+                        $url = $rel_url . '/' . $now . $filename;
+                        $name = $now . $filename;
+                        $success = move_uploaded_file($file['tmp_name'], $full_url);
+                    }
+                    // if upload was successful
+                    if ($success) {
+                        // save the url of the file
+                        $result['urls'][] = $url;
+                        $result['names'][] = $name;
+                    } else {
+                        $result['errors'][] = "Error uploaded $filename. Please try again.";
+                    }
+                    break;
+                case 3:
+                    // an error occured
+                    $result['errors'][] = "Error uploading $filename. Please try again.";
+                    break;
+                default:
+                    // an error occured
+                    $result['errors'][] = "System error uploading $filename. Contact webmaster.";
+                    break;
             }
+          } elseif ($file['error'] == 4) {
+              // no file was selected for upload
+              $result['nofiles'][] = "未选中文件";
+          } else {
+              // unacceptable file type
+              $result['errors'][] = "不支持该类型文件上传";
+          }
         }
         return $result;
     }
@@ -254,7 +254,7 @@ class AppController extends Controller
     }
     
     public function getAllPY($chinese, $delimiter = '', $length = 0,$charset='utf-8') {
-        if($charset != 'gb2312') $chinese = $this->_U2_Utf8_Gb($chinese);
+        if($charset != 'gb2312') $chinese = iconv('UTF-8', 'GB2312', $chinese);
        $py = $this->zh_to_pys($chinese, $delimiter);
        if($length) {
            $py = substr($py, 0, $length);
@@ -262,7 +262,7 @@ class AppController extends Controller
        return $py;
     }
     public function getFirstPY($chinese,$charset='utf-8'){
-      if($charset != 'gb2312') $chinese = $this->_U2_Utf8_Gb($chinese);
+      if($charset != 'gb2312') $chinese = iconv('UTF-8', 'GB2312', $chinese);
        $result = '' ;
        for ($i=0; $i<strlen($chinese); $i++) {
            $p = ord(substr($chinese,$i,1));
@@ -273,10 +273,6 @@ class AppController extends Controller
            $result .= substr($this->zh_to_py($p),0,1);
        }
        return $result ;
-    }
-  
-    private function _U2_Utf8_Gb($_C){
-        return iconv('UTF-8', 'GB2312', $_C);
     }
  
     private function zh_to_py($num, $blank = '') {
@@ -308,5 +304,77 @@ class AppController extends Controller
        }
        return implode($delimiter, $result);
     }
+
+    public function getDirSize($dir)
+     { 
+      if(!is_dir($dir)) return 0;
+
+      $handle = opendir($dir);
+      while (false!==($FolderOrFile = readdir($handle)))
+      { 
+       if($FolderOrFile != "." && $FolderOrFile != "..") 
+       { 
+        if(is_dir("$dir/$FolderOrFile"))
+        { 
+         $sizeResult += getDirSize("$dir/$FolderOrFile"); 
+        }
+        else
+        { 
+         $sizeResult += filesize("$dir/$FolderOrFile"); 
+        }
+       } else {
+         $sizeResult = 0; 
+       }
+      }
+      closedir($handle);
+      return $sizeResult;
+    }
+     // 单位自动转换函数
+    public function getRealSize($size)
+    { 
+          $kb = 1024;   // Kilobyte
+          $mb = 1024 * $kb; // Megabyte
+          $gb = 1024 * $mb; // Gigabyte
+          $tb = 1024 * $gb; // Terabyte
+          if($size < $kb)
+          { 
+           return $size." B";
+          }
+          else if($size < $mb)
+          { 
+           return round($size/$kb,2)." KB";
+          }
+          else if($size < $gb)
+          { 
+           return round($size/$mb,2)." MB";
+          }
+          else if($size < $tb)
+          { 
+           return round($size/$gb,2)." GB";
+          }
+          else
+          { 
+           return round($size/$tb,2)." TB";
+          }
+    }  
+    public function deleteDir($path){
+        if(!is_dir($path)) return true;
+        $handle = opendir($path);
+        if ($handle) {
+            while (false !== ( $item = readdir($handle) )) {
+                if ($item != "." && $item != "..")
+                    is_dir("$path/$item") ? $this->deleteDir("$path/$item") : unlink("$path/$item");
+            }
+            closedir($handle);
+            return rmdir($path);
+        }else {
+            if (file_exists($path)) {
+                return unlink($path);
+            } else {
+                return FALSE;
+            }
+        }
+    }
+
     
 }

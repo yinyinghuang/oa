@@ -87,18 +87,20 @@ class DepartmentsController extends AppController
                     $path .= 'department_' . $value->id . DS;
                 }
                 if(!is_dir($path)) mkdir($path);
-                //新建部门文件夹及其下公共文件夹
+                //新建部门文件夹及其下公共文件夹，level公司级别文件夹-1,部门级别文件夹0，个人级别文件夹1
                 $this->loadModel('Documents');
                 $folder = $this->Documents->newEntity([
                     'user_id' =>$_user['id'],
+                    'department_id' => $department->id,
                     'spell' => $this->getALLPY($department->name),
                     'name' => 'department_' . $department->id,
                     'origin_name' => $department->name,
                     'size' => 0,
                     'ext' => '',
                     'is_dir' => 1,
+                    'is_sys' => 1,
                     'parent_id' => $department->parent_id ? $this->Documents->find('all',['conditions' => ['name' => 'department_' . $department->parent_id]])->first()->id : 0,
-                    'level' => 2,
+                    'level' => $department->parent_id ? -1 : 0,
                     'deleted' => 0
                 ]); 
                 $this->Documents->save($folder);
@@ -109,14 +111,16 @@ class DepartmentsController extends AppController
                 if(!is_dir($path)) mkdir($path . DS . 'common');
                 $folder = $this->Documents->newEntity([
                     'user_id' =>$_user['id'],
+                    'department_id' => $department->id,
                     'spell' => 'bumengonggongwenjianjia',
                     'name' => 'common',
                     'origin_name' => '部门公共文件夹',
                     'size' => 0,
                     'ext' => '',
                     'is_dir' => 1,
+                    'is_sys' => 1,
                     'parent_id' => $folder->id,
-                    'level' => 1,
+                    'level' => $department->parent_id ? -1 : 0,
                     'deleted' => 0
                 ]); 
                 $this->Documents->save($folder);

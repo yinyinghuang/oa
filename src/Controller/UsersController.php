@@ -97,6 +97,7 @@ class UsersController extends AppController
                         'size' => 0,
                         'ext' => '',
                         'is_dir' => 1,
+                        'is_sys' => 1,
                         'parent_id' => $parentFolder->id,
                         'level' => 1,
                         'deleted' => 0

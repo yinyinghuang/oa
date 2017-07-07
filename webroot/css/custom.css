@@ -1096,6 +1096,10 @@ input,textarea {
 .documents .nav{
   padding: 10px;
 }
-.documents tr.highlight {
+.highlight {
     background-color: whitesmoke !important;
+}
+.collapseItem div.cur{
+    background: #e5f0fb;
+    border-color: #BBD4EF #fff;
 }

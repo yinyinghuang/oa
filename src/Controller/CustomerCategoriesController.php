@@ -121,7 +121,7 @@ class CustomerCategoriesController extends AppController
             if ($this->request->getData('parent_id') != 0) {
                 $parent = $this->CustomerCategories->get($this->request->getData('parent_id'));
                 if ($parent->lft > $customerCategory->lft && $parent->lft < $customerCategory->rght) {
-                    $this->Flash->error(__('不可选择下级分类作为上级分类'));
+                    $this->Flash->error(__('不可选择子分类作为上级分类'));
 
                     return $this->redirect(['action' => 'edit', $id]);
                 }

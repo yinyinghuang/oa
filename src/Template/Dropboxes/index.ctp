@@ -76,27 +76,7 @@
 
 <script type="text/javascript">
     $(function(){
-        oTable = $('#datatable').dataTable({
-            "bProcessing": true,
-            "bServerSide": true,
-            "sAjaxSource": "",
-            "aaSorting": [[2,'desc']],
-            "aoColumns": [
-              { "mData": "booking_user.name" },
-              { "mData": "booking_user.phone" },
-              { "mData": "booking_time" },
-              { "mData": "departure_time"},
-              { "mData": "number_of_people"},
-              { "mData": "amount" },
-              { "mData": "booking_user.id" }
-            ],
-            "columnDefs": [
-            {
-                "targets": [ 6 ],
-                "visible": false
-            }
-            ]
-        });
+       
     });
 </script>
 <?= $this->end() ?>

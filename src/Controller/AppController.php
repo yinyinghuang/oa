@@ -159,7 +159,7 @@ class AppController extends Controller
         foreach ($formdata as $file) {
           $filename = str_replace(' ', '_', $file['name']);
           $fileInfo = explode(".", $filename);
-          $fileExtension = end($fileInfo);
+          $fileExtension = strtolower(end($fileInfo));
           $typeOK = false;
           // check filetype is ok
           // debug ($file['type']);

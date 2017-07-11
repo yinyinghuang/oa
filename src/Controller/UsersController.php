@@ -90,7 +90,7 @@ class UsersController extends AppController
                         ->first();
                     $folder = $this->Documents->newEntity([
                         'user_id' =>$_user['id'],
-                        'department_id' => $user->department_id,
+                        'department_id' => $position->department_id,
                         'spell' => $this->getALLPY($user->username),
                         'name' => 'user_' . $user->id,
                         'origin_name' => $user->username,
@@ -100,6 +100,7 @@ class UsersController extends AppController
                         'is_sys' => 1,
                         'parent_id' => $parentFolder->id,
                         'level' => 1,
+                        'owner' => $_user['id'],
                         'deleted' => 0
                     ]); 
                     $this->Documents->save($folder);
@@ -143,13 +144,14 @@ class UsersController extends AppController
             'contain' => ['UserDepartmentRoles']
         ]);
         $this->loadModel('Departments');
+        $origin_name = $user->username;
         if ($this->request->is(['patch', 'post', 'put'])) {
             $user = $this->Users->patchEntity($user, $this->request->getData());
 
             if ($this->Users->save($user)) {
                 $this->loadModel('Documents');
                 for ($i=1; $i <= $this->request->getData('num') ; $i++) { 
-                    if (isset($_POST['position_id_' . $i])) {
+                    if (isset($_POST['position_id_' . $i]) && $_POST['position_id_' . $i]) {
                         $newDepartmentId = $this->request->getData('department_' . $i);
                         $position = $this->Users->UserDepartmentRoles->get($this->request->getData('position_id_' . $i));
                         $position->user_id = $user->id;
@@ -171,7 +173,7 @@ class UsersController extends AppController
                                 $track['new'] = $crumb->id;
                             }
                             $newpath .= 'user_' . $id;
-                            rename($oldpath, $newpath);
+                            if(file_exists($oldpath)) rename($oldpath, $newpath);
                             $oldFolderPid = $this->Documents->find('all')
                                 ->where(['name' => 'department_' . $position->department_id])
                                 ->first()->id;
@@ -198,16 +200,18 @@ class UsersController extends AppController
                             $parentFolder = $this->Documents->find('all')
                                 ->where(['name' => 'department_' . $position->department_id])
                                 ->first();
-
                             $folder = $this->Documents->find()
-                                ->where(['parent_id' => $oldFolderPid, 'name' => 'user_' .$id])
+                                ->where(['parent_id' => $oldFolderPid, 'name' => 'user_' . $id])
                                 ->first();
+
                             $folder->spell = $this->getALLPY($user->username);
                             $folder->origin_name = $user->username;
 
                             $this->Documents->save($folder);
+                            $position->role_id = $this->request->getData('role_id_' . $i);
+                            $this->Users->UserDepartmentRoles->save($position);
                         // }
-                    } else {
+                    } elseif($this->request->getData('department_id_' . $i)) {
                         $position = $this->Users->UserDepartmentRoles->newEntity();
                         $position->user_id = $user->id;
                         $position->department_id = $this->request->getData('department_id_' . $i);
@@ -231,16 +235,18 @@ class UsersController extends AppController
                             'origin_name' => $user->username,
                             'parent_id' => $parentFolder->id,
                             'level' => 1,
+                            'owner' => $_user['id'],
                             'deleted' => 0
                         ]); 
                         $this->Documents->save($folder);
-                        $file->ord = $this->Documents->find()->where(['is_dir' => 1])->order(['ord' => 'DESC'])->first();
-                        $file->ord = $file->ord ? $file->ord->ord ++ : 1;
+                        $folder->ord = $this->Documents->find()->where(['is_dir' => 1])->order(['ord' => 'DESC'])->first();
+                        $folder->ord = $folder->ord ? $folder->ord->ord ++ : 1;
                         $this->Documents->save($folder);
+                        $position->role_id = $this->request->getData('role_id_' . $i);
+                        $this->Users->UserDepartmentRoles->save($position);
                     }
-                        
-                    $position->role_id = $this->request->getData('role_id_' . $i);
-                    $this->Users->UserDepartmentRoles->save($position);
+                      
+                   
                 }
 
                
@@ -328,11 +334,15 @@ class UsersController extends AppController
     {
         $this->request->allowMethod(['post']);
         $this->loadModel('UserDepartmentRoles');
+        $this->loadModel('Departments');
         $data = null;
 
         $position =  $this->UserDepartmentRoles->get($this->request->getData('id'));
 
         if ($this->UserDepartmentRoles->delete($position)) {
+            $ancestors = $this->Departments->find('path',['for' => $position->department_id])->extract('id')->toArray(); 
+            $path = DB_ROOT . 'department_' . implode(DS . 'department_', $ancestors) . DS . 'user_' . $position->user_id;
+            $this->deleteDir($path);
             $data = 1;
         }else{
             $data = 0;

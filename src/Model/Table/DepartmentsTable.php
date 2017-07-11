@@ -57,7 +57,7 @@ class DepartmentsTable extends Table
         $this->hasMany('ChildDepartments', [
             'className' => 'Departments',
             'foreignKey' => 'parent_id'
-        ]);
+        ])->setDependent(true);
         $this->hasMany('UserDepartmentRoles', [
             'foreignKey' => 'department_id'
         ]);

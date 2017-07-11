@@ -57,7 +57,7 @@ class DocumentsTable extends Table
         $this->hasMany('ChildDocuments', [
             'className' => 'Documents',
             'foreignKey' => 'parent_id'
-        ]);
+        ])->setDependent(true);
     }
 
     /**

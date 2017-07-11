@@ -25,9 +25,26 @@ class DocumentsController extends AppController
       $this->loadModel('UserDepartmentRoles');
       $this->loadModel('Departments');
       $positions = $this->UserDepartmentRoles->findByUserId($_user['id']);
+
       $conditions = null;
       $parent_id = isset($_GET['pid']) && isset($_GET['pid']) != 0 ? $_GET['pid'] : 0;
       $conditions['Documents.parent_id'] = $parent_id;
+
+      if ($parent_id) {//上级文件夹
+        $parentDocument = $this->Documents->get($parent_id);
+        $parentDepartment = $this->Departments->get($parentDocument->department_id);
+        $relativeDepartments = $this->Departments->find()
+          ->where(['or' => [['lft >=' => $parentDepartment->lft, 'rght <=' => $parentDepartment->rght], ['lft <' => $parentDepartment->lft, 'rght >' => $parentDepartment->rght]]])
+          ->extract('id')
+          ->toArray();//文件夹所属部门及下级部门 或者是上级部门
+
+        $role = $this->UserDepartmentRoles->find()//当前员工是否属于该部门或其子部门
+          ->where(['user_id' => $_user['id'], 'department_id in' => $relativeDepartments])->first();
+        if (!$role) {
+          $this->Flash->error(__('无权访问.'));
+          return $this->redirect($this->referer());
+        }
+      }
 
       foreach ($positions as $value) {
         switch ($value->role_id) {
@@ -41,10 +58,13 @@ class DocumentsController extends AppController
             $conditions['OR'][] = ['Documents.level' => -1];
           break;
           case '2'://部门文件，或者公司共享文件
-            $parentDepartments = $this->Departments->find('path',['for' => $value->department_id])
+            $parentDepartment = $this->Departments->get($value->department_id);
+            $parentDepartments = $this->Departments->find()
+              ->where(['lft < ' => $parentDepartment->lft, 'rght > ' => $parentDepartment->rght])
               ->extract('id')
               ->toArray();
-            $conditions['OR'][] = ['Documents.level <' => 2, 'Documents.department_id in' => $parentDepartments];
+            $conditions['OR'][] = ['Documents.level <' => 1, 'Documents.department_id in' => $parentDepartments];
+            $conditions['OR'][] = ['Documents.level <' => 2, 'Documents.department_id' => $value->department_id];
             $conditions['OR'][] = ['Documents.level' => -1];
           break;
         }
@@ -74,7 +94,7 @@ class DocumentsController extends AppController
         ->where(['is_dir' => 1]);
       $html = $this->dirList($threads);
       
-      $this->set(compact('documents','parent_id','crumbs', 'path', 'iconArr', 'threads', 'html'));
+      $this->set(compact('documents','parent_id','crumbs', 'path', 'iconArr', 'threads', 'html','parentDocument'));
       $this->set('_serialize', ['documents']);
     }
 
@@ -154,22 +174,40 @@ class DocumentsController extends AppController
      */
     public function delete()
     {
-        $this->request->allowMethod(['post', 'delete']);
-        $itemid = $this->request->getData('itemid');
-        !is_array($itemid) && $itemid = [$itemid];
-        foreach ($itemid as $id) {
-          $document = $this->Documents->get($id);
-          $path = $this->Documents->find('path',['for' => $id])->extract('name')->toArray();
-          $path = DB_ROOT . implode('\\', $path);
-          if (is_file($path)) {
-            unlink($path);
-          } else {
-            $this->deleteDir($path);
-          }
-        }
-        $this->Documents->deleteAll(['id in ' => $itemid]);    
+
+      $_user = $this->request->session()->read('Auth')['User'];
+      $this->loadModel('UserDepartmentRoles');
+      $this->loadModel('Departments');
+      $this->request->allowMethod(['post', 'delete']);
+      $itemid = $this->request->getData('itemid');
+      !is_array($itemid) && $itemid = [$itemid];
+      foreach ($itemid as $id) { 
         
-        return $this->redirect($this->referer());
+        $document = $this->Documents->get($id);
+        $parentDepartments = $this->Departments->find('path', ['for' => $document->department_id])
+          ->extract('id')
+          ->toArray();//文件夹所属部门及下级部门 或者是上级部门
+        
+        $role = $this->UserDepartmentRoles->find()
+          ->where(['user_id' => $_user['id'], 'department_id in' => $parentDepartments])
+          ->order('role_id DESC')
+          ->first();
+        if(!($role->role_id > 2 || ($document->owner == $_user['id'] && $document->user_id == $_user['id']))) {
+          $this->Flash->error('无权删除文件：' . $document->origin_name);
+          continue;
+        }
+        $path = $this->Documents->find('path',['for' => $id])->extract('name')->toArray();
+        $path = DB_ROOT . implode('\\', $path);
+        $path = iconv('utf-8', 'gbk', $path);
+        if (is_file($path)) {
+          unlink($path);
+        } else {
+          $this->deleteDir($path);
+        }
+        $this->Documents->delete($document); 
+      }  
+      
+      return $this->redirect($this->referer());
     }
 
     public function upload(){
@@ -183,53 +221,72 @@ class DocumentsController extends AppController
         $data = $result = [];
         $result['html'] = '';
         $newContent = 0;
-        foreach ($attachments as $file) {
-            $resp = $this->uploadFiles('files' . $path, [$file]);
-            if (array_key_exists('urls', $resp)) {//上传成功
-                $newContent += $file['size'];
-                $fileInfo = explode(".", $file['name']);
-                $fileExtension = end($fileInfo);
-                $file = $this->Documents->newEntity([
-                    'user_id' =>$_user['id'],
-                    'spell' => $this->getALLPY($file['name']),
-                    'name' => $resp['names'][0],
-                    'origin_name' => $file['name'],
-                    'size' => $file['size'],
-                    'ext' => $fileExtension,
-                    'is_dir' => 0,
-                    'is_sys' => 0,
-                    'parent_id' => $parent_id,
-                    'level' => $parentFolder->level,
-                    'deleted' => 0
-                ]); 
-                $this->Documents->save($file);
-                $file->ord = $this->Documents->find()->where(['is_dir' => 0])->order(['ord' => 'DESC'])->first();
-                $file->ord = $file->ord ? $file->ord->ord ++ : 1;
-                $this->Documents->save($file);
-                // $data['success']['num'] ++;
-            } else{
-                $data['fail'][$file['name']] = $resp;
-                isset($data['fail']['num']) ? $data['fail']['num'] ++ : $data['fail']['num'] = 1;
-                $result['html'] .= '<li>' . $file['name'] . '： ' . $resp['errors'][0] . '</li>';
-            }
-        }
-        if ($newContent) {
-            $parentFolders = $this->Documents->find('path',['for' => $parent_id])->where(['is_dir' => 1])
-                ->extract('id')->toArray();
-             $this->Documents->query()
-            ->update()
-            ->set(['modified' => date('Y-m-d H:i:s'),"size=size + $newContent"])
-            ->where(['id in' => $parentFolders])
-            ->execute();
-        }
-        $result['num'] = count($attachments);
-        $result['flag'] = 1;
-        if (array_key_exists('fail', $data)) {
-          $result['flag'] --;
-          $result['html'] = '<div class="alert alert-danger"><div>失败个数：' . $data['fail']['num'] . '</div><div>失败列表：</div><ul>' . $result['html'] . '</ul></div>';
 
+        $this->loadModel('UserDepartmentRoles');
+        $this->loadModel('Departments');
+        $document = $this->Documents->get($parent_id);
+        $parentDepartments = $this->Departments->find('path', ['for' => $document->department_id])
+          ->extract('id')
+          ->toArray();//文件夹所属部门或者是上级部门
+        $role = $this->UserDepartmentRoles->find()
+          ->where(['user_id' => $_user['id'], 'department_id in' => $parentDepartments])
+          ->order('role_id DESC')
+          ->first();
+        if(($document->level == 1 && $document->owner == $_user['id'] ) || ($role && $document->level < 1 && $role->role_id > 1) || ($role && $role->role_id > 2)) {//个人文件，部门文件职位在主管以上
+          foreach ($attachments as $file) {
+              $resp = $this->uploadFiles('files' . $path, [$file]);
+              if (array_key_exists('urls', $resp)) {//上传成功
+                  $newContent += $file['size'];
+                  $fileInfo = explode(".", $file['name']);
+                  $fileExtension = end($fileInfo);
+                  $file = $this->Documents->newEntity([
+                      'department_id' => $parentFolder->department_id,
+                      'user_id' =>$_user['id'],
+                      'spell' => $this->getALLPY($file['name']),
+                      'name' => $resp['names'][0],
+                      'origin_name' => $file['name'],
+                      'size' => $file['size'],
+                      'ext' => $fileExtension,
+                      'is_dir' => 0,
+                      'is_sys' => 0,
+                      'parent_id' => $parent_id,
+                      'level' => $parentFolder->level,
+                      'owner' => $parentFolder->owner,
+                      'deleted' => 0
+                  ]); 
+                  $this->Documents->save($file);
+                  $file->ord = $this->Documents->find()->where(['is_dir' => 0])->order(['ord' => 'DESC'])->first();
+                  $file->ord = $file->ord ? $file->ord->ord ++ : 1;
+                  $this->Documents->save($file);
+              } else{
+                  $data['fail'][$file['name']] = $resp;
+                  isset($data['fail']['num']) ? $data['fail']['num'] ++ : $data['fail']['num'] = 1;
+                  $result['html'] .= '<li>' . $file['name'] . '： ' . $resp['errors'][0] . '</li>';
+              }
+          }
+          if ($newContent) {
+              $parentFolders = $this->Documents->find('path',['for' => $parent_id])->where(['is_dir' => 1])
+                  ->extract('id')->toArray();
+               $this->Documents->query()
+              ->update()
+              ->set(['modified' => date('Y-m-d H:i:s'),"size=size + $newContent"])
+              ->where(['id in' => $parentFolders])
+              ->execute();
+          }
+          $result['num'] = count($attachments);
+          $result['flag'] = 1;
+          if (array_key_exists('fail', $data)) {
+            $result['flag'] --;
+            $result['html'] = '<div class="alert alert-danger"><div>失败个数：' . $data['fail']['num'] . '</div><div>失败列表：</div><ul>' . $result['html'] . '</ul></div>';
+
+          }
+          $result['detail'] = $data;
+        }else {
+          $result['flag'] = 0;
+          $result['html'] = '<div class="alert alert-danger"><div>无权上传</div></div>';
         }
-        $result['detail'] = $data;
+
+        
         $this->response->body(json_encode($result));
         return $this->response;
     }
@@ -240,50 +297,67 @@ class DocumentsController extends AppController
       $data;
       $path = $this->request->data['path'];
       $filename = $this->request->data['filename'];
-      if ($filename == '') {
-        $data = -1;
-        $this->response->body($data);
-        return $this->response;
-      }
       $parent_id = $this->request->getData('parent_id');
       $parentFolder = $this->Documents->get($parent_id);
 
-      $spell = $this->getALLPY($filename);
-      $folder = $this->Documents->newEntity([
-          'user_id' =>$_user['id'],
-          'spell' => $spell,
-          'name' => $filename,
-          'origin_name' => $filename,
-          'size' => 0,
-          'ext' => '',
-          'is_dir' => 1,
-          'is_sys' => 0,
-          'parent_id' => $parent_id,
-          'level' => $parentFolder->level,
-          'deleted' => 0
-      ]); 
-      $this->Documents->save($folder);
-      $folder->ord = $this->Documents->find()->where(['is_dir' => 1])->order(['ord' => 'DESC'])->first();
-      $folder->ord = $folder->ord ? $folder->ord->ord ++ : 1;
-      $this->Documents->save($folder);
-
-      $parentFolders = $this->Documents->find('path',['for' => $parent_id])->where(['is_dir' => 1])
-          ->combine('id','name')->toArray();
-      $path = DB_ROOT . implode('\\', $parentFolders) . '\\' . iconv('utf-8', 'gbk', $folder->origin_name);
-      if(!is_dir($path)){
-        if (!mkdir($path)) {
-          $data = -2;
-          $this->response->body($path);
+      $this->loadModel('UserDepartmentRoles');
+      $this->loadModel('Departments');
+      $document = $this->Documents->get($parent_id);
+      $parentDepartments = $this->Departments->find('path', ['for' => $document->department_id])
+        ->extract('id')
+        ->toArray();//文件夹所属部门及下级部门 或者是上级部门
+      $role = $this->UserDepartmentRoles->find()
+        ->where(['user_id' => $_user['id'], 'department_id in' => $parentDepartments])
+        ->order('role_id DESC')
+        ->first();
+      if(($document->level == 1 && $document->owner == $_user['id'] ) || ($role && $document->level < 1 && $role->role_id > 1) || ($role && $role->role_id > 2)) {//个人文件，部门文件职位在主管以上
+        if ($filename == '') {
+          $data = -1;
+          $this->response->body($data);
           return $this->response;
         }
+
+        $spell = $this->getALLPY($filename);
+        $folder = $this->Documents->newEntity([
+            'department_id' => $parentFolder->department_id,
+            'user_id' =>$_user['id'],
+            'spell' => $spell,
+            'name' => $filename,
+            'origin_name' => $filename,
+            'size' => 0,
+            'ext' => '',
+            'is_dir' => 1,
+            'is_sys' => 0,
+            'parent_id' => $parent_id,
+            'level' => $parentFolder->level,
+            'owner' => $parentFolder->owner,
+            'deleted' => 0
+        ]); 
+        $this->Documents->save($folder);
+        $folder->ord = $this->Documents->find()->where(['is_dir' => 1])->order(['ord' => 'DESC'])->first();
+        $folder->ord = $folder->ord ? $folder->ord->ord ++ : 1;
+        $this->Documents->save($folder);
+
+        $parentFolders = $this->Documents->find('path',['for' => $parent_id])->where(['is_dir' => 1])
+            ->combine('id','name')->toArray();
+        $path = DB_ROOT . implode('\\', $parentFolders) . '\\' . iconv('utf-8', 'gbk', $folder->origin_name);
+        if(!is_dir($path)){
+          if (!mkdir($path)) {
+            $data = -2;
+            $this->response->body($path);
+            return $this->response;
+          }
+        }
+          
+         $this->Documents->query()
+        ->update()
+        ->set(['modified' => date('Y-m-d H:i:s')])
+        ->where(['id in' => array_keys($parentFolders)])
+        ->execute();
+        $data = 1;
+      } else {
+        $data = -3;
       }
-        
-       $this->Documents->query()
-      ->update()
-      ->set(['modified' => date('Y-m-d H:i:s')])
-      ->where(['id in' => array_keys($parentFolders)])
-      ->execute();
-      $data = 1;
       $this->response->body($data);
       return $this->response;
     }
@@ -297,27 +371,41 @@ class DocumentsController extends AppController
       
 
       $document = $this->Documents->get($id);
-      if ($name != $document->name) {
-        $crumbs = $this->Documents->find('path',['for' => $document->parent_id])->combine('id','name')->toArray();
-        $path = DB_ROOT .implode(DS, $crumbs);
-        $oldname = $path . DS . $document->name;
-        $newname = $path . DS . $name . DS . ($document->ext ? '.' . $document->ext : '');
-        if(!rename($oldname, $newname)) {
-          $this->response->body(-1);//重名失败
-          return $this->response;
+      $this->loadModel('UserDepartmentRoles');
+      $this->loadModel('Departments');
+      $parentDepartments = $this->Departments->find('path', ['for' => $document->department_id])
+        ->extract('id')
+        ->toArray();//文件夹所属部门及下级部门 或者是上级部门
+      $role = $this->UserDepartmentRoles->find()
+        ->where(['user_id' => $_user['id'], 'department_id in' => $parentDepartments])
+        ->order('role_id DESC')
+        ->first();
+      if(($document->level == 1 && $document->owner == $_user['id'] ) || ($role && $document->level < 1 && $role->role_id > 1) || ($role && $role->role_id > 2)) {//个人文件，部门文件职位在主管以上
+
+        if ($name != $document->name) {
+          $crumbs = $this->Documents->find('path',['for' => $document->parent_id])->combine('id','name')->toArray();
+          $path = DB_ROOT .implode(DS, $crumbs);
+          $oldname = $path . DS . $document->name;
+          $newname = $path . DS . $name . DS . ($document->ext ? '.' . $document->ext : '');
+          if(!rename($oldname, $newname)) {
+            $this->response->body(-1);//重名失败
+            return $this->response;
+          }
+
+          $document->spell = $this->getALLPY($name);
+          $document->origin_name = $document->name = $name;
+          $this->Documents->save($document);
+
+           $this->Documents->query()
+          ->update()
+          ->set(['modified' => date('Y-m-d H:i:s')])
+          ->where(['id in' => array_keys($crumbs)])
+          ->execute();
         }
-
-        $document->spell = $this->getALLPY($name);
-        $document->origin_name = $document->name = $name;
-        $this->Documents->save($document);
-
-         $this->Documents->query()
-        ->update()
-        ->set(['modified' => date('Y-m-d H:i:s')])
-        ->where(['id in' => array_keys($crumbs)])
-        ->execute();
+        $this->response->body(1);
+      } else {
+        $this->response->body(-2);//无权限操作
       }
-      $this->response->body(1);
       return $this->response;
     }
     public function move()
@@ -328,46 +416,63 @@ class DocumentsController extends AppController
       $parent_id = $this->request->data['parent_id'];
       
 
+
       $document = $this->Documents->get($id);
       if ($document->is_sys) {
         $this->response->body(-4);//系统文件无权移动
         return $this->response;
       }
       $originParentDocument = $this->Documents->get($document->parent_id);
-      $newParentDocument = $this->Documents->get($parent_id);
-      if($newParentDocument->lft >= $originParentDocument->lft && $newParentDocument->rght <= $originParentDocument->lft ){
-        $this->response->body('-2');//新上级分类为子分类
-        return $this->response;
-      }
-      
-      $originCrumbs = $this->Documents->find('path',['for' => $document->id])->combine('id','name')->toArray();
-      $originPath = DB_ROOT .implode(DS, $originCrumbs);
-      $newCrumbs = $this->Documents->find('path',['for' => $parent_id])->combine('id','name')->toArray();
-      $newPath = DB_ROOT .implode(DS, $newCrumbs);
-      if (!is_dir($newPath)) {
-        $this->response->body(-3);//新文件不存在
-        return $this->response;
-      }
-      if(!rename($originPath, $newPath. DS . $document->name)) {
-        $this->response->body(-1);//重名失败
-        return $this->response;
-      }
 
-      $document->parent_id = $parent_id;
-      $this->Documents->save($document);
+      $this->loadModel('UserDepartmentRoles');
+      $this->loadModel('Departments');
+      $parentDepartments = $this->Departments->find('path', ['for' => $document->department_id])
+        ->extract('id')
+        ->toArray();//文件夹所属部门及下级部门 或者是上级部门
+      $role = $this->UserDepartmentRoles->find()
+        ->where(['user_id' => $_user['id'], 'department_id in' => $parentDepartments])
+        ->order('role_id DESC')
+        ->first();
+      if(($document->level == 1 && $document->owner == $_user['id'] ) || ($role && $document->level < 1 && $role->role_id > 1) || ($role && $role->role_id > 2)) {//个人文件，部门文件职位在主管以上
 
-       $this->Documents->query()
-      ->update()
-      ->set(['modified' => date('Y-m-d H:i:s'),"size=size - $document->size"])
-      ->where(['id in' => array_keys($originCrumbs)])
-      ->execute();
-       $this->Documents->query()
-      ->update()
-      ->set(['modified' => date('Y-m-d H:i:s'),"size=size + $document->size"])
-      ->where(['id in' => array_keys($newCrumbs)])
-      ->execute();
-      
-      $this->response->body(1);
+        $newParentDocument = $this->Documents->get($parent_id);
+        if($newParentDocument->lft >= $originParentDocument->lft && $newParentDocument->rght <= $originParentDocument->lft ){
+          $this->response->body('-2');//新上级分类为子分类
+          return $this->response;
+        }
+        
+        $originCrumbs = $this->Documents->find('path',['for' => $document->id])->combine('id','name')->toArray();
+        $originPath = DB_ROOT .implode(DS, $originCrumbs);
+        $newCrumbs = $this->Documents->find('path',['for' => $parent_id])->combine('id','name')->toArray();
+        $newPath = DB_ROOT .implode(DS, $newCrumbs);
+        if (!is_dir($newPath)) {
+          $this->response->body(-3);//新文件不存在
+          return $this->response;
+        }
+        if(!rename($originPath, $newPath. DS . $document->name)) {
+          $this->response->body(-1);//移动失败
+          return $this->response;
+        }
+
+        $document->parent_id = $parent_id;
+        $document->level = $newParentDocument->level;
+        $this->Documents->save($document);
+
+         $this->Documents->query()
+        ->update()
+        ->set(['modified' => date('Y-m-d H:i:s'),"size=size - $document->size"])
+        ->where(['id in' => array_keys($originCrumbs)])
+        ->execute();
+         $this->Documents->query()
+        ->update()
+        ->set(['modified' => date('Y-m-d H:i:s'),"size=size + $document->size"])
+        ->where(['id in' => array_keys($newCrumbs)])
+        ->execute();
+        
+        $this->response->body(1);
+      } else {
+        $this->response->body(-4);//无权限操作
+      }
       return $this->response;
     }
 
@@ -380,6 +485,7 @@ class DocumentsController extends AppController
       
 
       $document = $this->Documents->get($id);
+      $newParentDocument = $this->Documents->get($parent_id);
       
       $originCrumbs = $this->Documents->find('path',['for' => $document->id])->combine('id','name')->toArray();
       $originPath = DB_ROOT .implode(DS, $originCrumbs);
@@ -404,9 +510,29 @@ class DocumentsController extends AppController
       }
       
       
-
+      
       $document->parent_id = $parent_id;
-      $newDocument = $this->Documents->newEntity([
+      $childCount = ($document->rght - $document->lft + 1);
+      $del = ($newParentDocument->lft - $document->lft + 1);
+      $delDepth = ($newParentDocument->depth - $document->depth + 1);
+      $modified = date('Y-m-d H:i:s');
+
+      $this->Documents->query()
+      ->update()
+      ->set(["lft=lft + $childCount"])
+      ->where(['lft > ' => $newParentDocument->lft])
+      ->execute();
+      $this->Documents->query()
+      ->update()
+      ->set(["rght=rght + $childCount"])
+      ->where(['rght >= ' => $newParentDocument->rght])
+      ->execute();
+
+      $descendant = $this->Documents->find('children', ['for' => $document->id])
+        ->where(['deleted' => 0]);
+      $query = $this->Documents->query()->insert(['department_id', 'user_id', 'spell', 'name', 'origin_name', 'size', 'ext', 'is_dir', 'is_sys', 'parent_id', 'level','owner', 'deleted', 'created', 'modified']);
+      $query->values([
+        'department_id' => $document->department_id,
         'user_id' =>$_user['id'],
         'spell' => $document->spell,
         'name' => $document->name,
@@ -415,19 +541,43 @@ class DocumentsController extends AppController
         'ext' => $document->ext,
         'is_dir' => $document->is_dir,
         'is_sys' => $document->is_sys,
-        'parent_id' => $document->parent_id,
-        'level' => $document->level,
-        'deleted' => $document->deleted
+        'parent_id' => $parent_id,
+        'lft' => $document->lft + $del,
+        'rght' => $document->rght + $del,
+        'depth' => $document->depth + $delDepth,
+        'level' => $newParentDocument->level,
+        'owner' => $newParentDocument->owner,
+        'deleted' => $document->deleted,
+        'created' => $modified,
+        'modified' => $modified
       ]);
+      foreach ($descendant as $value) {
+        $query->values([
+          'department_id' => $value->department_id,
+          'user_id' =>$_user['id'],
+          'spell' => $value->spell,
+          'name' => $value->name,
+          'origin_name' => $value->origin_name,
+          'size' => $value->size,
+          'ext' => $value->ext,
+          'is_dir' => $value->is_dir,
+          'is_sys' => $value->is_sys,
+          'parent_id' => $value->parent_id,
+          'lft' => $value->lft + $del,
+          'rght' => $value->rght + $del,
+          'level' => $newParentDocument->level,
+          'owner' => $newParentDocument->owner,
+          'depth' => $value->depth + $delDepth,
+          'deleted' => $value->deleted,
+          'created' => $modified,
+          'modified' => $modified
+        ]);
+      }
+      $query->execute();
 
-      $this->Documents->save($newDocument);
-      $newDocument->ord = $this->Documents->find()->where(['is_dir' => $document->is_dir])->order(['ord' => 'DESC'])->first();
-      $newDocument->ord = $newDocument->ord ? $newDocument->ord->ord ++ : 1;
-      $this->Documents->save($newDocument);
-
-       $this->Documents->query()
+      $this->Documents->query()
       ->update()
-      ->set(['modified' => date('Y-m-d H:i:s'),"size=size + $document->size"])
+      ->set(['modified' => $modified,"size=size + $document->size"])
       ->where(['id in' => array_keys($newCrumbs)])
       ->execute();
       
@@ -463,8 +613,7 @@ class DocumentsController extends AppController
             //输出文件内容     
             //读取文件内容并直接输出到浏览器    
             echo fread ( $file, filesize ($path) );    
-            fclose ( $file ); 
-            $this->Flash->success('下载成功');   
+            fclose ($file); 
             return $this->redirect($this->referer());   
         }
       }

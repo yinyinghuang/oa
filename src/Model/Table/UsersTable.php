@@ -87,9 +87,13 @@ class UsersTable extends Table
             'foreignKey' => 'user_id'
         ])->setDependent(true);
 
-        $this->hasMany('ProjectViewers', [
+        $this->hasMany('Documents', [
             'foreignKey' => 'user_id'
         ])->setDependent(true);
+
+        // $this->hasMany('ProjectViewers', [
+        //     'foreignKey' => 'user_id'
+        // ])->setDependent(true);
     }
 
     /**

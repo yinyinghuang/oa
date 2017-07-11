@@ -100,7 +100,7 @@ class DepartmentsController extends AppController
                     'is_dir' => 1,
                     'is_sys' => 1,
                     'parent_id' => $department->parent_id ? $this->Documents->find('all',['conditions' => ['name' => 'department_' . $department->parent_id]])->first()->id : 0,
-                    'level' => $department->parent_id ? -1 : 0,
+                    'level' => $department->parent_id ? 0 : -1,
                     'deleted' => 0
                 ]); 
                 $this->Documents->save($folder);
@@ -108,7 +108,7 @@ class DepartmentsController extends AppController
                 $folder->ord = $folder->ord ? $folder->ord->ord ++ : 1;
                 $this->Documents->save($folder);
 
-                if(!is_dir($path)) mkdir($path . DS . 'common');
+                if(!is_dir($path . DS . 'common')) mkdir($path . DS . 'common');
                 $folder = $this->Documents->newEntity([
                     'user_id' =>$_user['id'],
                     'department_id' => $department->id,
@@ -120,7 +120,7 @@ class DepartmentsController extends AppController
                     'is_dir' => 1,
                     'is_sys' => 1,
                     'parent_id' => $folder->id,
-                    'level' => $department->parent_id ? -1 : 0,
+                    'level' => $department->parent_id ? 0 : -1,//若有上级文件，则为0
                     'deleted' => 0
                 ]); 
                 $this->Documents->save($folder);

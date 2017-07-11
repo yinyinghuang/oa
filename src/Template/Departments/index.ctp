@@ -22,6 +22,7 @@
     <table cellpadding="0" cellspacing="0">
         <thead>
             <tr>
+                <th scope="col"><?= __('编号') ?></th>
                 <th scope="col"><?= $this->Paginator->sort('name') ?></th>
                 <th scope="col"><?= __('子部门') ?></th>
                 <th scope="col" class="actions"><?= __('Actions') ?></th>
@@ -30,6 +31,7 @@
         <tbody>
             <?php foreach ($departments as $department): ?>
             <tr>
+                <td><?= h($department->id) ?></td>
                 <td><?= h($department->name) ?></td>
                 <td><?php if ($department->childCount !== 0): ?>
                     <a href="<?= $this->Url->build(['action' => 'index',$department->id]) ?>"><?= $department->childCount ?></a>

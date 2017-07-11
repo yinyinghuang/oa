@@ -32,16 +32,19 @@
                    <i class="fa fa-cloud-download"></i><span class="hidden-xs">下载</span>
                 </button>            
             </div>
+           
             <div class="text-center pull-right">
                 <button class="btn btn-default"  data-toggle="modal" data-target="#newModal" id="newFolder">
                     <i class="fa fa-plus"></i><span class="hidden-xs">新建文件夹</span>
                 </button>            
             </div>
             <div class="text-center pull-right">
-                <button class="btn btn-primary"  data-toggle="modal" data-target="#uploadModal">
+                <button class="btn btn-primary"  data-toggle="modal" data-target="#uploadModal" id="upload">
                    <i class="fa fa-cloud-upload"></i><span class="hidden-xs">上传文件</span>
                 </button>            
-            </div>
+            </div>    
+            
+            
         <?php endif ?>
         <div class="pull-left col-md-6 col-sm-6 col-xs-12">
             <ol class="breadcrumb" style="margin-left:0;padding: 0">
@@ -76,7 +79,7 @@
             <?php foreach ($documents as $document): ?>
             <tr>
                 <td><input type="checkbox" name="itemid[]" value="<?= h($document->id) ?>" class="itemid" data-sys="<?= $document->is_sys ?>"></td>
-                <td><a href="<?= $this->Url->build(['action' => 'index', 'pid' => $document->id])?>"><i class="fa fa-<?php if ($document->is_dir): ?>folder-o<?php else: ?><?= $iconArr[$document->ext]?><?php endif ?>" style="padding-right:4px;color: #000;"></i><?= h($document->origin_name) ?></a></td>
+                <td><a href="<?= $this->Url->build(['action' => 'index', 'pid' => $document->id])?>"><i class="fa fa-<?php if ($document->is_dir): ?>folder-o<?php else: ?><?= $iconArr[strtolower($document->ext)]?><?php endif ?>" style="padding-right:4px;color: #000;"></i><?= h($document->origin_name) ?></a></td>
                 <td><?= h($document->size) ?></td>
                 <td><?= h($document->modified) ?></td>
                 <td class="actions">
@@ -84,7 +87,7 @@
                         <a data-toggle="modal" data-target="#newModal" class="new_btn" data-id="<?= $document->id ?>">新建</a>
                         <a data-toggle="modal" data-target="#uploadModal" class="upload_btn" data-path="<?= $document->name?>" data-id="<?= $document->id ?>">上传</a>
                     <?php else: ?>
-                        <?= $this->Form->postLink(__('下载'), ['action' => 'download', $document->id]) ?>
+                        <?= $this->Form->postLink(__('下载'), ['action' => 'download'],['data' => ['itemid' => $document->id]]) ?>
                     <?php endif ?>
 
                     <?php if (!$document->is_sys): ?>
@@ -124,6 +127,7 @@
     
 </div>
 <div class="clearfix"></div>
+
 <div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -140,7 +144,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal" id="close">关闭</button>
-                <button type="button" class="btn btn-primary" id="upload">上传</button>
+                <button type="button" class="btn btn-primary" id="uploadConfirm">上传</button>
             </div>
             
         </div>
@@ -158,7 +162,7 @@
                 <label for="filename" class="control-label">文件名</label>
                 <input type="text" class="filename" required id="filename">
                 <div id="newSuccess"></div>
-                <div class="error"></div>
+                <div class="error" id="newError"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal" id="close">关闭</button>
@@ -230,8 +234,8 @@
         </div>
     </div>
 </div>
-<?= $this->start('script') ?>
 
+<?= $this->start('script') ?>
 <script type="text/javascript">
     $(function(){
         var tbody = $('tbody'),
@@ -270,7 +274,7 @@
         $('#file').on('click',function(){
             $('#upload').attr('disabled', false);
         });
-        $('#upload').on('click', function(){
+        $('#uploadConfirm').on('click', function(){
             if ($('#file')[0].files.length < 1) {
                 $('#uploadError').html('<div style="color:red">未选中文件</div>');return false;
             }
@@ -370,6 +374,8 @@
                         error.html('文件夹名不能为空');
                     } else if(data == -1) {
                         error.html('文件夹创建失败');
+                    } else if(data == -3) {
+                        error.html('无权新建文件夹');
                     }
                 },
                 error : function(data){
@@ -409,8 +415,10 @@
                 success : function(data){
                     if (data == 1) {
                         window.location.reload();
-                    } else {
+                    } else if(data = -1) {
                         error.html('重命名失败。请重试');
+                    } else if(data == -2) {
+                        error.html('无权限重命名');
                     }
                 },
                 error : function(data){
@@ -445,7 +453,7 @@
                     if (data == 1) {
                         window.location.reload();
                     } else if(data == -1) {
-                        error.html('重命名失败。请重试');
+                        error.html('移动失败。请重试');
                     } else if(data == -3){
                         error.html('指定文件不存在');
                     }
@@ -499,7 +507,10 @@
         });
         $('#selectAll').on('click',function(){
             $('.itemid').prop('checked', this.checked);
-            $('#newFolder,#rename,#move').attr('disabled', true);
+            $('#upload,#newFolder,#rename,#move').attr('disabled', this.checked);
+        });
+        $('.itemid').on('click',function(){
+            $('#upload,#newFolder,#rename,#move').attr('disabled', $('.itemid:checked').length > 1 ? true : false); 
         });
         $('#delete').on('click',function(){
             if (confirm('确定删除？')) {
@@ -565,7 +576,6 @@
                         console.log(data.responseText);
                     }
                 })
-            
         });
     });
 </script>

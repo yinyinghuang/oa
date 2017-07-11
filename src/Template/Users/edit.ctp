@@ -35,7 +35,7 @@
                 }
                 echo '</div>';
                 echo $this->Form->control('role_id_' . $k, ['value' => $position->role_id, 'label' => '职位' . $k, 'required' => true, 'options' => $roles]);
-                if($key) echo '<a class="btn btn-danger del">删除</a>';
+                echo '<a class="btn btn-danger del">删除</a>';
                 echo '</div>';
 
             }

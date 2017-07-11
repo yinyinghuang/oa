@@ -232,7 +232,7 @@ class DocumentsController extends AppController
           ->where(['user_id' => $_user['id'], 'department_id in' => $parentDepartments])
           ->order('role_id DESC')
           ->first();
-        if(($document->level == 1 && $document->owner == $_user['id'] ) || ($role && $document->level < 1 && $role->role_id > 1) || ($role && $role->role_id > 2)) {//个人文件，部门文件职位在主管以上
+        if(($document->level == 1 && $document->owner == $_user['id'] ) || ($role && $document->level < 1 && $role->role_id > 1) || ($role && $role->role_id > 2) || ($role->role_id == 2 && $role->department_id == $document->department_id)) {//个人文件，部门文件职位在主管以上
           foreach ($attachments as $file) {
               $resp = $this->uploadFiles('files' . $path, [$file]);
               if (array_key_exists('urls', $resp)) {//上传成功
@@ -310,7 +310,7 @@ class DocumentsController extends AppController
         ->where(['user_id' => $_user['id'], 'department_id in' => $parentDepartments])
         ->order('role_id DESC')
         ->first();
-      if(($document->level == 1 && $document->owner == $_user['id'] ) || ($role && $document->level < 1 && $role->role_id > 1) || ($role && $role->role_id > 2)) {//个人文件，部门文件职位在主管以上
+      if(($document->level == 1 && $document->owner == $_user['id'] ) || ($role && $document->level < 1 && $role->role_id > 1) || ($role && $role->role_id > 2) || ($role->role_id == 2 && $role->department_id == $document->department_id)) {//个人文件，部门文件职位在主管以上
         if ($filename == '') {
           $data = -1;
           $this->response->body($data);
@@ -380,7 +380,7 @@ class DocumentsController extends AppController
         ->where(['user_id' => $_user['id'], 'department_id in' => $parentDepartments])
         ->order('role_id DESC')
         ->first();
-      if(($document->level == 1 && $document->owner == $_user['id'] ) || ($role && $document->level < 1 && $role->role_id > 1) || ($role && $role->role_id > 2)) {//个人文件，部门文件职位在主管以上
+      if(($document->level == 1 && $document->owner == $_user['id'] ) || ($role && $document->level < 1 && $role->role_id > 1) || ($role && $role->role_id > 2) || ($role->role_id == 2 && $role->department_id == $document->department_id)) {//个人文件，部门文件职位在主管以上
 
         if ($name != $document->name) {
           $crumbs = $this->Documents->find('path',['for' => $document->parent_id])->combine('id','name')->toArray();
@@ -433,7 +433,7 @@ class DocumentsController extends AppController
         ->where(['user_id' => $_user['id'], 'department_id in' => $parentDepartments])
         ->order('role_id DESC')
         ->first();
-      if(($document->level == 1 && $document->owner == $_user['id'] ) || ($role && $document->level < 1 && $role->role_id > 1) || ($role && $role->role_id > 2)) {//个人文件，部门文件职位在主管以上
+      if(($document->level == 1 && $document->owner == $_user['id'] ) || ($role && $document->level < 1 && $role->role_id > 1) || ($role && $role->role_id > 2) || ($role->role_id == 2 && $role->department_id == $document->department_id)) {//个人文件，部门文件职位在主管以上
 
         $newParentDocument = $this->Documents->get($parent_id);
         if($newParentDocument->lft >= $originParentDocument->lft && $newParentDocument->rght <= $originParentDocument->lft ){

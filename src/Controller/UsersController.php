@@ -2,7 +2,7 @@
 namespace App\Controller;
 
 use App\Controller\AppController;
-
+use Cake\Filesystem\Folder;
 /**
  * Users Controller
  *
@@ -28,7 +28,6 @@ class UsersController extends AppController
             }]
         ];
         $users = $this->paginate($this->Users);
-
         $this->set(compact('users'));
         $this->set('_serialize', ['users']);
     }
@@ -73,45 +72,42 @@ class UsersController extends AppController
                     $position->user_id = $user->id;
                     $position->department_id = $this->request->getData('department_' . $i);
                     $position->role_id = $this->request->getData('role_id_' . $i);
-                    $this->UserDepartmentRoles->save($position);
                     //新建个人文件夹
                     $crumbs = $this->Departments->find('path',['for' => $position->department_id])
-                        ->select(['id']);
-                    $path = DB_ROOT;
-                    foreach ($crumbs as $value) {
-                        $path .= 'department_' . $value->id . DS;
-                    }
-                    $path .= 'user_' . $user->id;
+                        ->extract('name')->toArray();
+                    $path = DB_ROOT . ($crumbs ? ($crumbs ? implode(DS, $crumbs) . DS : '') : '') . $user->username;
+
+                    $path = iconv('utf-8', 'gbk', $path);
                     if(!is_dir($path)) mkdir($path);
 
                     $this->loadModel('Documents');
-                    $parentFolder = $this->Documents->find('all')
-                        ->where(['name' => 'department_' . $position->department_id])
-                        ->first();
+                    $department = $this->Departments->get($position->department_id);
+                    
                     $folder = $this->Documents->newEntity([
                         'user_id' =>$_user['id'],
                         'department_id' => $position->department_id,
                         'spell' => $this->getALLPY($user->username),
-                        'name' => 'user_' . $user->id,
+                        'name' => $user->username,
                         'origin_name' => $user->username,
                         'size' => 0,
                         'ext' => '',
                         'is_dir' => 1,
                         'is_sys' => 1,
-                        'parent_id' => $parentFolder->id,
+                        'parent_id' => $department->document_id,
                         'level' => 1,
-                        'owner' => $_user['id'],
+                        'owner' => $user->id,
                         'deleted' => 0
                     ]); 
                     $this->Documents->save($folder);
                     $folder->ord = $this->Documents->find()->where(['is_dir' => 1])->order(['ord' => 'DESC'])->first();
                     $folder->ord = $folder->ord ? $folder->ord->ord ++ : 1;
-                    $parentFolders = $this->Documents->find()
-                        ->where(['lft < ' => $folder->lft, 'rght > ' => $folder->rght, 'is_dir' => 1]);
-                    foreach ($parentFolders as $value) {
-                        $value->modified = date('Y-m-d H:i:s');
-                        $this->Documents->save($value);
-                    }
+                    $position->document_id = $folder->id;
+                    $this->UserDepartmentRoles->save($position);
+
+                    $parentFolders = $this->Documents->query()->update()
+                        ->where(['lft < ' => $folder->lft, 'rght > ' => $folder->rght, 'is_dir' => 1])
+                        ->set(['modified' => date('Y-m-d H:i:s')])
+                        ->execute();
 
                 }
 
@@ -144,105 +140,114 @@ class UsersController extends AppController
             'contain' => ['UserDepartmentRoles']
         ]);
         $this->loadModel('Departments');
-        $origin_name = $user->username;
         if ($this->request->is(['patch', 'post', 'put'])) {
+            $origin_name = $user->username;
             $user = $this->Users->patchEntity($user, $this->request->getData());
-
             if ($this->Users->save($user)) {
-                $this->loadModel('Documents');
-                for ($i=1; $i <= $this->request->getData('num') ; $i++) { 
-                    if (isset($_POST['position_id_' . $i]) && $_POST['position_id_' . $i]) {
+                $dirtyName = 0;
+                $this->loadModel('Documents');                
+                if ($origin_name != $user->username) {
+                    $dirtyName = 1;
+                }
+                for ($i=1; $i <= $this->request->getData('num') ; $i++) {
+
+                    if (isset($_POST['position_id_' . $i]) && $_POST['position_id_' . $i]) {//已存在部门改变
+                        $dirtyDid = 0;
                         $newDepartmentId = $this->request->getData('department_' . $i);
                         $position = $this->Users->UserDepartmentRoles->get($this->request->getData('position_id_' . $i));
-                        $position->user_id = $user->id;
-                        // if ($position->department_id != $newDepartmentId) {//部门改变
+                        $position->role_id = $this->request->getData('role_id_' . $i);
+                        $position->department_id = $newDepartmentId;
+                        $folder = $this->Documents->get($position->document_id);
+
+                        if ($dirtyName == 1) {
+                            $folder->origin_name = $folder->name = $user->username;
+                            $folder->spell = $this->getALLPY($user->username);
+                        }
+
+                        if ($position->department_id != $newDepartmentId) {//部门改变
+                            $dirtyDid = 1;
                             $oldpath = $newpath = DB_ROOT;
                             $track;
-                            $crumbs = $this->Departments->find('path',['for' => $position->department_id]);
-                            foreach ($crumbs as $crumb) {
-                                $oldpath .= 'department_' . $crumb->id . DS;
-                                $track['old'] = $crumb->id;
-                            }
-                            $oldpath .= 'user_' . $id;
-                            $size = $this->getDirSize($oldpath);
-                            $size = $size ? $size : 0;
+                            $newParentFolderId = $this->Departments->get($newDepartmentId)->document_id;
+                            $newParentFolder = $this->Documents->get($newFolderId);
+                            $folder->parent_id = $newParentFolderId;
+                            $folder->department_id = $newDepartmentId;
 
-                            $crumbs = $this->Departments->find('path',['for' => $newDepartmentId]);
-                            foreach ($crumbs as $crumb) {
-                                $newpath .= 'department_' . $crumb->id . DS;
-                                $track['new'] = $crumb->id;
-                            }
-                            $newpath .= 'user_' . $id;
+                            $crumbs = $this->Documents->find()
+                                ->where(['lft < ' => $folder->lft, 'rght > ' => $folder->rght, 'is_dir' => 1])
+                                ->extract('name')
+                                ->toArray();
+                            $oldpath .= ($crumbs ? implode(DS, $crumbs) . DS : '') .$origin_name;
+                            $size = (new Folder($oldpath))->dirsize();
+                            $oldpath = iconv('utf-8', 'gbk', $oldpath);
+
+
+                            $crumbs = $this->Documents->find()
+                                ->where(['lft <= ' => $newParentFolder->lft, 'rght >= ' => $newParentFolder->rght, 'is_dir' => 1])
+                                ->extract('name')
+                                ->toArray();
+                            $newpath .= ($crumbs ? implode(DS, $crumbs) . DS : '') . $user->username;
+                            $newpath = iconv('utf-8', 'gbk', $newpath);
+                            //重命名文件夹
                             if(file_exists($oldpath)) rename($oldpath, $newpath);
-                            $oldFolderPid = $this->Documents->find('all')
-                                ->where(['name' => 'department_' . $position->department_id])
-                                ->first()->id;
-                            $newFolderPid = $this->Documents->find('all')
-                                ->where(['name' => 'department_' . $newDepartmentId])
-                                ->first()->id;
+                            
                             $this->Documents->query()
                                 ->update()
-                                ->set(['parent_id' => $newFolderPid])
-                                ->where(['name' => 'user_' .$id, 'parent_id' => $oldFolderPid])
-                                ->execute();
-                            $track && $this->Documents->query()
-                                ->update()
                                 ->set(['modified' => date('Y-m-d H:i:s'), "size=size - $size"])
-                                ->where(['id in' => $track['old']])
+                                ->where(['lft < ' => $folder->lft, 'rght > ' => $folder->rght, 'is_dir' => 1])
                                 ->execute();
-                            $track && $this->Documents->query()
+                            $this->Documents->query()
                                 ->update()
                                 ->set(['modified' => date('Y-m-d H:i:s'), "size=size + $size"])
-                                ->where(['id in' => $track['new']])
+                                ->where(['lft <= ' => $newParentFolder->lft, 'rght >= ' => $newParentFolder->rght, 'is_dir' => 1])
                                 ->execute();
-                            $position->department_id = $newDepartmentId;
-
                             $parentFolder = $this->Documents->find('all')
                                 ->where(['name' => 'department_' . $position->department_id])
                                 ->first();
-                            $folder = $this->Documents->find()
-                                ->where(['parent_id' => $oldFolderPid, 'name' => 'user_' . $id])
-                                ->first();
-
-                            $folder->spell = $this->getALLPY($user->username);
-                            $folder->origin_name = $user->username;
-
+                        }
+                        if($dirtyName || $dirtyDid){
                             $this->Documents->save($folder);
-                            $position->role_id = $this->request->getData('role_id_' . $i);
-                            $this->Users->UserDepartmentRoles->save($position);
-                        // }
-                    } elseif($this->request->getData('department_id_' . $i)) {
+                        }
+                        $this->Users->UserDepartmentRoles->save($position);
+                        
+                    } elseif($this->request->getData('department_id_' . $i)) {//新增部门
                         $position = $this->Users->UserDepartmentRoles->newEntity();
                         $position->user_id = $user->id;
                         $position->department_id = $this->request->getData('department_id_' . $i);
+                        $position->role_id = $this->request->getData('role_id_' . $i);
                         //新建个人文件夹
-                        $crumbs = $this->Departments->find('path',['for' => $position->department_id])
-                            ->select(['id']);
-                        $path = DB_ROOT;
-                        foreach ($crumbs as $value) {
-                            $path .= 'department_' . $value->id . DS;
-                        }
-                        $path .= 'user_' . $user->id;
+                        $parentFolderId = $this->Departments->get($position->department_id)->document_id;
+                        $parentFolder = $this->Documents->get($parentFolderId);
+
+                        $crumbs = $this->Documents->find()
+                            ->where(['lft <= ' => $parentFolder->lft, 'rght >= ' => $parentFolder->rght, 'is_dir' => 1])
+                            ->extract('name')
+                            ->toArray();
+                        $path =  DB_ROOT . ($crumbs ? implode(DS, $crumbs) . DS : '') .$user->username;print_r($path);
+                        $path = iconv('utf-8', 'gbk', $path);
                         if(!is_dir($path)) mkdir($path);
 
-                        $parentFolder = $this->Documents->find('all')
-                            ->where(['name' => 'department_' . $position->department_id])
-                            ->first();
                         $folder = $this->Documents->newEntity([
+                            'department_id' => $position->department_id,
                             'user_id' =>$_user['id'],
                             'spell' => $this->getALLPY($user->username),
-                            'name' => 'user_' . $user->id,
+                            'name' => $user->username,
                             'origin_name' => $user->username,
-                            'parent_id' => $parentFolder->id,
+                            'parent_id' => $parentFolderId,
+                            'ext' => '',
+                            'size' => 0,
+                            'is_dir' => 1,
+                            'is_sys' => 1,
                             'level' => 1,
-                            'owner' => $_user['id'],
+                            'owner' => $user->id,
                             'deleted' => 0
                         ]); 
-                        $this->Documents->save($folder);
+                        $this->Documents->save($folder);print_r($folder);
                         $folder->ord = $this->Documents->find()->where(['is_dir' => 1])->order(['ord' => 'DESC'])->first();
                         $folder->ord = $folder->ord ? $folder->ord->ord ++ : 1;
                         $this->Documents->save($folder);
-                        $position->role_id = $this->request->getData('role_id_' . $i);
+
+                        $position->document_id = $folder->id;
                         $this->Users->UserDepartmentRoles->save($position);
                     }
                       
@@ -304,8 +309,21 @@ class UsersController extends AppController
     public function delete($id = null)
     {
         $this->request->allowMethod(['post', 'delete']);
-        $user = $this->Users->get($id);
+
+        $this->loadModel('Documents');
+        $user = $this->Users->get($id,[
+            'contain' => ['UserDepartmentRoles']
+        ]);
+        $positionArr = [];
+        foreach ($user->user_department_roles as $position) {
+            $path = $this->Documents->find('path',['for' => $position->document_id])->extract('name')->toArray();
+            $path = DB_ROOT . implode(DS, $path) ;
+            $path = iconv('utf-8', 'gbk', $path);
+            $result = (new Folder($path))->delete();
+            $positionArr[] = $position->document_id;
+        }
         if ($this->Users->delete($user)) {
+            $positionArr && $this->Documents->deleteAll(['id in '=> $positionArr]);
             $this->Flash->success(__('The user has been deleted.'));
         } else {
             $this->Flash->error(__('The user could not be deleted. Please, try again.'));
@@ -334,19 +352,21 @@ class UsersController extends AppController
     {
         $this->request->allowMethod(['post']);
         $this->loadModel('UserDepartmentRoles');
-        $this->loadModel('Departments');
+        $this->loadModel('Documents');
         $data = null;
 
         $position =  $this->UserDepartmentRoles->get($this->request->getData('id'));
-
-        if ($this->UserDepartmentRoles->delete($position)) {
-            $ancestors = $this->Departments->find('path',['for' => $position->department_id])->extract('id')->toArray(); 
-            $path = DB_ROOT . 'department_' . implode(DS . 'department_', $ancestors) . DS . 'user_' . $position->user_id;
-            $this->deleteDir($path);
+        
+        $path = $this->Documents->find('path',['for' => $position->document_id])->extract('name')->toArray();
+        $path = DB_ROOT . ($path ? implode(DS, $path) . DS : '');
+        $path = iconv('utf-8', 'gbk', $path);
+        if ((new Folder($path))->delete()) {
+            $folder = $this->Documents->get($position->document_id);
+            $this->Documents->delete($folder); 
+            $this->UserDepartmentRoles->delete($position);
             $data = 1;
-        }else{
-            $data = 0;
         }
+        
             
         $this->response->body($data);       
 

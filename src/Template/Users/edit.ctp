@@ -119,6 +119,9 @@
                         }else {
                             alert('删除失败，请重试');
                         }
+                    },
+                    error : function(data){
+                        alert('程序出现错误');
                     }
                 });
             }else{

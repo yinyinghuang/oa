@@ -26,7 +26,7 @@ class DocumentsController extends AppController
       $_user = $this->request->session()->read('Auth')['User'];
       $this->loadModel('UserDepartmentRoles');
       $this->loadModel('Departments');
-      $positions = $this->UserDepartmentRoles->findByUserId($_user['id'])->group(['role_id DESC'])->toArray();
+      $positions = $this->UserDepartmentRoles->findByUserId($_user['id']);
 
       $conditions = null;
       $parent_id = isset($_GET['pid']) && isset($_GET['pid']) != 0 ? $_GET['pid'] : 0;
@@ -51,29 +51,18 @@ class DocumentsController extends AppController
       foreach ($positions as $value) {
         switch ($value->role_id) {
           case '1'://只看自己上传的，只看自己的文件夹，或者是部门共享文件，或者公司共享文件
-            $curDepartment = $this->Departments->get($value->department_id);
-            $ancestors = $this->Departments->find()
-              ->where(['lft <' => $curDepartment->lft, 'rght >' => $curDepartment->rght])
+            $parentDepartments = $this->Departments->find('path',['for' => $value->department_id])
               ->extract('id')
               ->toArray();
-            $descendants = $this->Departments->find()
-              ->where(['lft >=' => $curDepartment->lft, 'rght <=' => $curDepartment->rght])
-              ->extract('id')
-              ->toArray();
-            $conditions['OR'][] = ['Documents.level' => 1, 'Documents.owner' => $_user['id']];
-            $conditions['OR'][] = ['Documents.level' => 0, 'Documents.department_id in ' => $ancestors];
-            $conditions['OR'][] = ['Documents.level < ' => $value->role_id,'Documents.department_id in ' => $descendants];
-            $conditions['OR'][] = ['Documents.level' => $value->role_id,'Documents.department_id' => $value->department_id];
+            $conditions['OR'][] = ['Documents.user_id' => $_user['id']];
+            $conditions['OR'][] = ['Documents.name' => 'user_' . $_user['id']];
+            $conditions['OR'][] = ['Documents.level' => 0, 'Documents.department_id in ' => $parentDepartments];
             $conditions['OR'][] = ['Documents.level' => -1];
           break;
           case '2'://部门文件，或者公司共享文件
-            $curDepartment = $this->Departments->get($value->department_id);
-            $ancestors = $this->Departments->find()
-              ->where(['lft <' => $curDepartment->lft, 'rght >' => $curDepartment->rght])
-              ->extract('id')
-              ->toArray();
-            $descendants = $this->Departments->find()
-              ->where(['lft >=' => $curDepartment->lft, 'rght <=' => $curDepartment->rght])
+            $parentDepartment = $this->Departments->get($value->department_id);
+            $parentDepartments = $this->Departments->find()
+              ->where(['lft < ' => $parentDepartment->lft, 'rght > ' => $parentDepartment->rght])
               ->extract('id')
               ->toArray();
             $conditions['OR'][] = ['Documents.level <' => 1, 'Documents.department_id in' => $parentDepartments];
@@ -113,6 +102,73 @@ class DocumentsController extends AppController
     }
 
     /**
+     * View method
+     *
+     * @param string|null $id Document id.
+     * @return \Cake\Http\Response|null
+     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
+     */
+    public function view($id = null)
+    {
+        $document = $this->Documents->get($id, [
+            'contain' => ['Users', 'ParentDocuments', 'ChildDocuments']
+        ]);
+
+        $this->set('document', $document);
+        $this->set('_serialize', ['document']);
+    }
+
+    /**
+     * Add method
+     *
+     * @return \Cake\Http\Response|null Redirects on successful add, renders view otherwise.
+     */
+    public function add()
+    {
+        $document = $this->Documents->newEntity();
+        if ($this->request->is('post')) {
+            $document = $this->Documents->patchEntity($document, $this->request->getData());
+            if ($this->Documents->save($document)) {
+                $this->Flash->success(__('The document has been saved.'));
+
+                return $this->redirect(['action' => 'index']);
+            }
+            $this->Flash->error(__('The document could not be saved. Please, try again.'));
+        }
+        $users = $this->Documents->Users->find('list', ['limit' => 200]);
+        $parentDocuments = $this->Documents->ParentDocuments->find('list', ['limit' => 200]);
+        $this->set(compact('document', 'users', 'parentDocuments'));
+        $this->set('_serialize', ['document']);
+    }
+
+    /**
+     * Edit method
+     *
+     * @param string|null $id Document id.
+     * @return \Cake\Http\Response|null Redirects on successful edit, renders view otherwise.
+     * @throws \Cake\Network\Exception\NotFoundException When record not found.
+     */
+    public function edit($id = null)
+    {
+        $document = $this->Documents->get($id, [
+            'contain' => []
+        ]);
+        if ($this->request->is(['patch', 'post', 'put'])) {
+            $document = $this->Documents->patchEntity($document, $this->request->getData());
+            if ($this->Documents->save($document)) {
+                $this->Flash->success(__('The document has been saved.'));
+
+                return $this->redirect(['action' => 'index']);
+            }
+            $this->Flash->error(__('The document could not be saved. Please, try again.'));
+        }
+        $users = $this->Documents->Users->find('list', ['limit' => 200]);
+        $parentDocuments = $this->Documents->ParentDocuments->find('list', ['limit' => 200]);
+        $this->set(compact('document', 'users', 'parentDocuments'));
+        $this->set('_serialize', ['document']);
+    }
+
+    /**
      * Delete method
      *
      * @param string|null $id Document id.
@@ -138,8 +194,8 @@ class DocumentsController extends AppController
         $role = $this->UserDepartmentRoles->find()
           ->where(['user_id' => $_user['id'], 'department_id in' => $parentDepartments])
           ->order('role_id DESC')
-          ->toArray();
-        if($role->role_id == 1 || ($role->role_id == 2 && $document->department_id == $_user['department_id'])) {
+          ->first();
+        if(!($role->role_id > 2 || ($document->owner == $_user['id'] && $document->user_id == $_user['id']))) {
           $this->Flash->error('无权删除文件：' . $document->origin_name);
           continue;
         }
@@ -147,9 +203,13 @@ class DocumentsController extends AppController
         $path = DB_ROOT . implode('\\', $path);
         $path = iconv('utf-8', 'gbk', $path);
         if (is_file($path)) {
-          (new File($path))->delete();
+          $fileIns = new File($path);
+          $fileIns->delete();
+          // unlink($path);
         } else {
-          (new Folder($path))->delete();
+          $folderIns = new Folder($path);
+          $folderIns->delete();
+          // $this->deleteDir($path);
         }
         $this->Documents->delete($document); 
       }  

@@ -51,9 +51,6 @@ class DepartmentsTable extends Table
             'className' => 'Departments',
             'foreignKey' => 'parent_id'
         ]);
-        $this->hasMany('Accounts', [
-            'foreignKey' => 'department_id'
-        ]);
         $this->hasMany('ChildDepartments', [
             'className' => 'Departments',
             'foreignKey' => 'parent_id'
@@ -61,6 +58,9 @@ class DepartmentsTable extends Table
         $this->hasMany('UserDepartmentRoles', [
             'foreignKey' => 'department_id'
         ]);
+        $this->hasOne('Documents', [
+            'foreignKey' => 'department_id'
+        ])->setDependent(true);
     }
 
     /**

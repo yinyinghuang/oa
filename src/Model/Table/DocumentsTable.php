@@ -58,6 +58,9 @@ class DocumentsTable extends Table
             'className' => 'Documents',
             'foreignKey' => 'parent_id'
         ])->setDependent(true);
+        $this->hasOne('Departments', [
+            'foreignKey' => 'document_id'
+        ])->setDependent(true);
     }
 
     /**

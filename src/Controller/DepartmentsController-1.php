@@ -2,7 +2,7 @@
 namespace App\Controller;
 
 use App\Controller\AppController;
-use Cake\Filesystem\Folder;
+
 /**
  * Departments Controller
  *
@@ -81,36 +81,32 @@ class DepartmentsController extends AppController
             $department = $this->Departments->patchEntity($department, $this->request->getData());
             if ($this->Departments->save($department)) {
                 $crumbs = $this->Departments->find('path',['for' => $department->id])
-                        ->select(['name']);
+                        ->select(['id']);
                 $path = DB_ROOT;
                 foreach ($crumbs as $value) {
-                    $path .= $value->name . DS;
+                    $path .= 'department_' . $value->id . DS;
                 }
-                $path = iconv('utf-8', 'gbk', $path);
                 if(!is_dir($path)) mkdir($path);
-                $department->parent_id && $parentDepartment = $this->Departments->get($department->parent_id);
                 //新建部门文件夹及其下公共文件夹，level公司级别文件夹-1,部门级别文件夹0，个人级别文件夹1
                 $this->loadModel('Documents');
                 $folder = $this->Documents->newEntity([
                     'user_id' =>$_user['id'],
                     'department_id' => $department->id,
                     'spell' => $this->getALLPY($department->name),
-                    'name' => $department->name,
+                    'name' => 'department_' . $department->id,
                     'origin_name' => $department->name,
                     'size' => 0,
                     'ext' => '',
                     'is_dir' => 1,
                     'is_sys' => 1,
-                    'parent_id' => $department->parent_id ? $this->Documents->get($parentDepartment->document_id)->id : 0,
-                    'level' => 0,
+                    'parent_id' => $department->parent_id ? $this->Documents->find('all',['conditions' => ['name' => 'department_' . $department->parent_id]])->first()->id : 0,
+                    'level' => $department->parent_id ? 0 : -1,
                     'deleted' => 0
                 ]); 
                 $this->Documents->save($folder);
                 $folder->ord = $this->Documents->find()->where(['is_dir' => 1])->order(['ord' => 'DESC'])->first();
                 $folder->ord = $folder->ord ? $folder->ord->ord ++ : 1;
                 $this->Documents->save($folder);
-                $department->document_id = $folder->id; 
-                $this->Departments->save($department);
 
                 if(!is_dir($path . DS . 'common')) mkdir($path . DS . 'common');
                 $folder = $this->Documents->newEntity([
@@ -124,14 +120,14 @@ class DepartmentsController extends AppController
                     'is_dir' => 1,
                     'is_sys' => 1,
                     'parent_id' => $folder->id,
-                    'level' => 0,//若有上级文件，则为0
+                    'level' => $department->parent_id ? 0 : -1,//若有上级文件，则为0
                     'deleted' => 0
                 ]); 
                 $this->Documents->save($folder);
                 $folder->ord = $this->Documents->find()->where(['is_dir' => 1])->order(['ord' => 'DESC'])->first();
                 $folder->ord = $folder->ord ? $folder->ord->ord ++ : 1;
 
-                
+                  
                 $this->Flash->success(__('The department has been saved.'));
 
                 return $this->redirect(['action' => 'index'], $this->request->getData('parent_id'));
@@ -158,7 +154,6 @@ class DepartmentsController extends AppController
         $department = $this->Departments->get($id, [
             'contain' => []
         ]);
-
         if ($this->request->is(['patch', 'post', 'put'])) {
             if ($this->request->getData('parent_id') != 0) {
                 $parent = $this->Departments->get($this->request->getData('parent_id'));
@@ -168,47 +163,27 @@ class DepartmentsController extends AppController
                     return $this->redirect(['action' => 'edit', $id]);
                 }
             }
-            $origin_name = $department->name;
-            $origin_pid = $department->parent_id;
             $department = $this->Departments->patchEntity($department, $this->request->getData());
             if ($this->Departments->save($department)) {
 
-                //部门文件夹及其下公共文件夹
+                //新建部门文件夹及其下公共文件夹
                 $this->loadModel('Documents');
-                $folder = $this->Documents->get($department->document_id);
+                $folder = $this->Documents->find('all')
+                    ->where(['name' => 'department_' . $id])
+                    ->first();
                 if ($folder->origin_name != $department->name) {
-                    !isset($dirtyName) && $dirtyName = 1;
-                    $folder->origin_name = $folder->name = $department->name;
-                    $folder->spell = $this->getALLPY($department->name);                    
-                }
-                if ($origin_pid != $department->parent_id) {
-                    !isset($dirtyPid) && $dirtyPid = 1;
-                    $newParentDepartment = $this->Departments->get($department->parent_id);//新上级部门
-                    $folder->parent_id = $newparentDepartment->document_id;//文档上级文档为新上级部门的文档
+                    $folder->origin_name = $department->name;
+                    $folder->spell = $this->getALLPY($department->name);
+                    $this->Documents->save($folder);
+                    $parentFolders = $this->Documents->find()
+                        ->where(['lft < ' => $folder->lft, 'rght > ' => $folder->rght, 'is_dir' => 1]);
+                    foreach ($parentFolders as $value) {
+                        $value->modified = date('Y-m-d H:i:s');
+                        $this->Documents->save($value);
+                    }
                 }
 
-                if (isset($ditryPid) || isset($ditryName)) {
-                    if (isset($dirtyPid)) {
-                        $query = $this->Documents->query()
-                            ->update()
-                            ->where(['lft < ' => $folder->lft, 'rght > ' => $folder->rght, 'is_dir' => 1])
-                            ->set(['modified' => date('Y-m-d H:i:s'),'size=size-$folder->size'])
-                            ->execute();//更新原始上级文档
-                        $newParentFolders = $this->Documents->get($folder->parent_id);
-                        $query = $this->Documents->query()
-                            ->update()
-                            ->where(['lft <= ' => $newParentFolders->lft, 'rght >= ' => $newParentFolders->rght, 'is_dir' => 1])
-                            ->set(['modified' => date('Y-m-d H:i:s'),'size=size+$folder->size'])
-                            ->execute();//更新新上级文档
-                    } else {
-                        $query = $this->Documents->query()
-                            ->update()
-                            ->where(['lft < ' => $folder->lft, 'rght > ' => $folder->rght, 'is_dir' => 1])
-                            ->set(['modified' => date('Y-m-d H:i:s')])
-                            ->execute();
-                    }
-                    $this->Documents->save($folder);
-                }
+                $this->Documents->save($folder);
 
                 $this->Flash->success(__('The department has been saved.'));
 
@@ -266,17 +241,14 @@ class DepartmentsController extends AppController
             return $this->redirect(['action' => 'index']);
         }
         $this->loadModel('Documents');
-        $this->Documents->deleteAll(['id' => $department->document_id]);
+        $this->Documents->deleteAll(['name' => 'department_' . $department->id]);
         $parentDepartments = $this->Departments->find('path',['for' => $id])
             ->order(['level' => 'ASC']);
         $path = DB_ROOT;
         foreach ($parentDepartments as $value) {
-            $path .= $value->name . DS;
+            $path .= 'department_' . $value->id . DS;
         }
-        $path = iconv('utf-8', 'gbk', $path);
-        $folder = new Folder($path);
-
-        $delete = $folder->delete();
+        $delete = $this->deleteDir($path);
         if ($delete) {
             if ($this->Departments->delete($department)) {
 

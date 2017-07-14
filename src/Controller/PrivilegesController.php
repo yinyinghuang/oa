@@ -21,10 +21,17 @@ class PrivilegesController extends AppController
     public function index()
     {
         $this->loadModel('Departments');
-        $privileges = $this->paginate($this->Privileges);
+        $query = $this->Privileges->find();
+        $departments = $this->Departments->find()
+            ->where(['parent_id' => 0])
+            ->combine('id', 'name')
+            ->toArray();
 
-        $sections = $this->Departments->find('list');
-        $this->set(compact('privileges', 'sections'));
+        $privileges = [];
+        foreach ($query as $value) {
+            $privileges[$value->department_id][$value->role_id][] = $value->what;
+        }
+        $this->set(compact('privileges', 'departments'));
         $this->set('_serialize', ['privileges']);
     }
 
@@ -82,22 +89,54 @@ class PrivilegesController extends AppController
      * @return \Cake\Http\Response|null Redirects on successful edit, renders view otherwise.
      * @throws \Cake\Network\Exception\NotFoundException When record not found.
      */
-    public function edit($id = null)
+    public function edit()
     {
-        $privilege = $this->Privileges->get($id, [
-            'contain' => []
-        ]);
+        $this->loadModel('CustomerCategories');
+        
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $privilege = $this->Privileges->patchEntity($privilege, $this->request->getData());
-            if ($this->Privileges->save($privilege)) {
-                $this->Flash->success(__('The privilege has been saved.'));
+            $department_id = $this->request->getData('did') ? $this->request->getData('did') : 0;
+            $role_id = $this->request->getData('rid') ? $this->request->getData('rid') : 0;
+            $user_id = $this->request->getData('uid');
+            $privilege = $this->Privileges->find()
+                ->where(['department_id' => $department_id, 'role_id' => $role_id])
+                ->combine('what', 'how')
+                ->toArray();
+            $data = [];
+            $auth = $this->request->getData('auth');
 
-                return $this->redirect(['action' => 'index']);
+            $this->Privileges->deleteAll(['department_id' => $department_id, 'role_id' => $role_id]);
+            if ($auth) {
+                foreach ($auth as $key => $value) {
+                    $value = implode('', $value);
+                    
+                    isset($queryInsert) ? $queryInsert->insert(['department_id', 'role_id', 'what', 'how'])
+                        ->values(['department_id' => $department_id, 'role_id' => $role_id, 'what' => $key, 'how' => $value]): $queryInsert = $this->Privileges->query()
+                        ->insert(['department_id', 'role_id', 'what', 'how'])
+                        ->values(['department_id' => $department_id, 'role_id' => $role_id, 'what' => $key, 'how' => $value]);
+                    
+                }
+                if (isset($queryInsert)) {
+                    $queryInsert->execute();
+                }
             }
-            $this->Flash->error(__('The privilege could not be saved. Please, try again.'));
-        }
-        $this->set(compact('privilege'));
+            $this->Flash->success(__('The privilege has been saved.'));
 
+            return $this->redirect(['action' => 'index']);
+            
+            $this->Flash->error(__('The privilege could not be saved. Please, try again.'));
+        } else {
+            $department_id = $this->request->query('did') ? $this->request->query('did') : 0;
+            $role_id = $this->request->query('rid') ? $this->request->query('rid') : 0;
+            $user_id = $this->request->query('uid');
+            $privilege = $this->Privileges->find()
+                ->where(['department_id' => $department_id, 'role_id' => $role_id])
+                ->combine('what', 'how')
+                ->toArray();
+        }
+        $customerCate = $this->CustomerCategories->find()
+            ->where(['parent_id' => 0]);
+        $customerCateCount = $customerCate->count();
+        $this->set(compact('privilege', 'customerCate', 'customerCateCount', 'department_id', 'role_id', 'user_id'));
         $this->set('_serialize', ['privilege']);
     }
 

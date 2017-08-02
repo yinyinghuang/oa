@@ -29,7 +29,7 @@ class PrivilegesController extends AppController
 
         $privileges = [];
         foreach ($query as $value) {
-            $privileges[$value->department_id][$value->role_id][] = $value->what;
+            $privileges[$value->department_id][$value->role_id][$value->what] = '';
         }
         $this->set(compact('privileges', 'departments'));
         $this->set('_serialize', ['privileges']);
@@ -107,12 +107,14 @@ class PrivilegesController extends AppController
             $this->Privileges->deleteAll(['department_id' => $department_id, 'role_id' => $role_id]);
             if ($auth) {
                 foreach ($auth as $key => $value) {
-                    $value = implode('', $value);
-                    
-                    isset($queryInsert) ? $queryInsert->insert(['department_id', 'role_id', 'what', 'how'])
-                        ->values(['department_id' => $department_id, 'role_id' => $role_id, 'what' => $key, 'how' => $value]): $queryInsert = $this->Privileges->query()
-                        ->insert(['department_id', 'role_id', 'what', 'how'])
-                        ->values(['department_id' => $department_id, 'role_id' => $role_id, 'what' => $key, 'how' => $value]);
+                    foreach ($value as $v) {
+                        isset($queryInsert) ? $queryInsert->insert(['department_id', 'role_id', 'what', 'how'])
+                            ->values(['department_id' => $department_id, 'role_id' => $role_id, 'what' => $key, 'how' => $v])
+                             : 
+                            $queryInsert = $this->Privileges->query()
+                            ->insert(['department_id', 'role_id', 'what', 'how'])
+                            ->values(['department_id' => $department_id, 'role_id' => $role_id, 'what' => $key, 'how' => $v]);
+                    }                   
                     
                 }
                 if (isset($queryInsert)) {
@@ -128,10 +130,12 @@ class PrivilegesController extends AppController
             $department_id = $this->request->query('did') ? $this->request->query('did') : 0;
             $role_id = $this->request->query('rid') ? $this->request->query('rid') : 0;
             $user_id = $this->request->query('uid');
-            $privilege = $this->Privileges->find()
+            $query = $this->Privileges->find()
                 ->where(['department_id' => $department_id, 'role_id' => $role_id])
-                ->combine('what', 'how')
-                ->toArray();
+                ->select(['what', 'how']);
+            foreach ($query as $value) {
+                $privilege[$value->what][] = $value->how;
+            }
         }
         $customerCate = $this->CustomerCategories->find()
             ->where(['parent_id' => 0]);

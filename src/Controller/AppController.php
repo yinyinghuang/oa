@@ -76,6 +76,7 @@ class AppController extends Controller
         $this->loadComponent('RequestHandler');
         $this->loadComponent('Flash');
         $this->loadComponent('Auth');
+        
 
         /*
          * Enable the following components for recommended CakePHP security settings.
@@ -111,8 +112,36 @@ class AppController extends Controller
             foreach ($query as $project) {
                 $projectRespArr[$project->remark][] = $project->itemid;
             }
+            //查询可用模块
+            $_user = $this->request->session()->read('Auth')['User'];
+            $this->loadModel('Privileges');
+            $this->loadModel('UserDepartmentRoles');
+            $positions = $this->UserDepartmentRoles->find()
+              ->where(['user_id' => $_user['id']])
+              ->select(['department_id', 'role_id']);
+            $_privileges = [];
+            foreach ($positions as $position) {
+              $privilege = $this->Privileges->find()
+                ->where(['department_id' => $position->department_id, 'role_id' => $position->role_id])
+                ->select(['what','how']);
+              foreach ($privilege as $value) {
+                if(isset($_privileges[$value->what])) {
+                  !(in_array($value->how, $_privileges[$value->what])) && $_privileges[$value->what][] = $value->how;
+                } else {
+                  $_privileges[$value->what][] = $value->how;
+                }                
+              }
+            }
+            // $_module = array_keys($_privileges);
+            // $_controller = $this->request->param('controller');
+            // $_action = $this->request->param('action');
 
-            $this->set(compact('backlogCount','financeInArr','projectRespArr','projectRespCount'));
+            // if(!((in_array($_controller, $_module) && ($_action === 'index' || in_array($_action, $_privileges[$_controller]))) || in_array($_action, ['login', 'logout']) || $_controller === 'Dashboard')){
+            //   $this->Flash->error(__('无权访问'));
+            //   return $this->redirect($this->referer());
+            // }
+            
+            $this->set(compact('backlogCount','financeInArr','projectRespArr','projectRespCount','_privileges','_module'));
         }
     }
 
@@ -304,31 +333,6 @@ class AppController extends Controller
        }
        return implode($delimiter, $result);
     }
-
-    public function getDirSize($dir)
-     { 
-      if(!is_dir($dir)) return 0;
-
-      $handle = opendir($dir);
-      while (false!==($FolderOrFile = readdir($handle)))
-      { 
-       if($FolderOrFile != "." && $FolderOrFile != "..") 
-       { 
-        if(is_dir("$dir/$FolderOrFile"))
-        { 
-         $sizeResult += getDirSize("$dir/$FolderOrFile"); 
-        }
-        else
-        { 
-         $sizeResult += filesize("$dir/$FolderOrFile"); 
-        }
-       } else {
-         $sizeResult = 0; 
-       }
-      }
-      closedir($handle);
-      return $sizeResult;
-    }
      // 单位自动转换函数
     public function getRealSize($size)
     { 
@@ -356,25 +360,6 @@ class AppController extends Controller
           { 
            return round($size/$tb,2)." TB";
           }
-    }  
-    public function deleteDir($path){
-        if(!is_dir($path)) return true;
-        $handle = opendir($path);
-        if ($handle) {
-            while (false !== ( $item = readdir($handle) )) {
-                if ($item != "." && $item != "..")
-                    is_dir("$path/$item") ? $this->deleteDir("$path/$item") : unlink("$path/$item");
-            }
-            closedir($handle);
-            return rmdir($path);
-        }else {
-            if (file_exists($path)) {
-                return unlink($path);
-            } else {
-                return FALSE;
-            }
-        }
-    }
-
+    } 
     
 }

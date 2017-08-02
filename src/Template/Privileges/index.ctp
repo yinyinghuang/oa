@@ -30,7 +30,7 @@
                 <?php for($i = 4; $i >= 1; $i --) { ?>
                 <td>
                     <?php if (isset($privileges[$key][$i])): ?>
-                        <?php foreach ($privileges[$key][$i] as $module): ?>
+                        <?php foreach ($privileges[$key][$i] as $module => $placeholder): ?>
                             <div class="visible-lg visible-md"><?= $module ?></div>
                         <?php endforeach ?>
                     <?php endif ?>

@@ -27,10 +27,10 @@
                 <td>
                     <div class="row">
                         <div class="col-xs-12">
-                            <label><input class="option" type="checkbox" name="auth[CustomerCategories][]" value="v"<?php if (isset($privilege['CustomerCategories']) && strpos($privilege['CustomerCategories'], 'v') !== false): ?> checked<?php endif ?>>浏览</label>
-                            <label><input class="option" type="checkbox" name="auth[CustomerCategories][]" value="a"<?php if (isset($privilege['CustomerCategories']) && strpos($privilege['CustomerCategories'], 'a') !== false): ?> checked<?php endif ?>>新增</label>
-                            <label><input class="option" type="checkbox" name="auth[CustomerCategories][]" value="e"<?php if (isset($privilege['CustomerCategories']) && strpos($privilege['CustomerCategories'], 'e') !== false): ?> checked<?php endif ?>>编辑</label>
-                            <label><input class="option" type="checkbox" name="auth[CustomerCategories][]" value="d"<?php if (isset($privilege['CustomerCategories']) && strpos($privilege['CustomerCategories'], 'd') !== false): ?> checked<?php endif ?>>删除</label>
+                            <label><input class="option" type="checkbox" name="auth[CustomerCategories][]" value="view"<?php if (isset($privilege['CustomerCategories']) && in_array('view', $privilege['CustomerCategories']) !== false): ?> checked<?php endif ?>>浏览</label>
+                            <label><input class="option" type="checkbox" name="auth[CustomerCategories][]" value="add"<?php if (isset($privilege['CustomerCategories']) && in_array('add', $privilege['CustomerCategories']) !== false): ?> checked<?php endif ?>>新增</label>
+                            <label><input class="option" type="checkbox" name="auth[CustomerCategories][]" value="edit"<?php if (isset($privilege['CustomerCategories']) && in_array('edit', $privilege['CustomerCategories']) !== false): ?> checked<?php endif ?>>编辑</label>
+                            <label><input class="option" type="checkbox" name="auth[CustomerCategories][]" value="delete"<?php if (isset($privilege['CustomerCategories']) && in_array('delete', $privilege['CustomerCategories']) !== false): ?> checked<?php endif ?>>删除</label>
                         </div>
                     </div>
                 </td>
@@ -40,11 +40,11 @@
                 <td>
                     <div class="row">
                         <div class="col-xs-12">
-                            <label><input class="option" type="checkbox" name="auth[SmsTemplates][]" value="v"<?php if (isset($privilege['SmsTemplates']) && strpos($privilege['SmsTemplates'], 'v') !== false): ?> checked<?php endif ?>>浏览</label>
-                            <label><input class="option" type="checkbox" name="auth[SmsTemplates][]" value="a"<?php if (isset($privilege['SmsTemplates']) && strpos($privilege['SmsTemplates'], 'a') !== false): ?> checked<?php endif ?>>新增</label>
-                            <label><input class="option" type="checkbox" name="auth[SmsTemplates][]" value="e"<?php if (isset($privilege['SmsTemplates']) && strpos($privilege['SmsTemplates'], 'e') !== false): ?> checked<?php endif ?>>编辑</label>
-                            <label><input class="option" type="checkbox" name="auth[SmsTemplates][]" value="d"<?php if (isset($privilege['SmsTemplates']) && strpos($privilege['SmsTemplates'], 'd') !== false): ?> checked<?php endif ?>>删除</label>
-                            <label><input class="option" type="checkbox" name="auth[SmsTemplates][]" value="s"<?php if (isset($privilege['SmsTemplates']) && strpos($privilege['SmsTemplates'], 's') !== false): ?> checked<?php endif ?>>发送</label>
+                            <label><input class="option" type="checkbox" name="auth[SmsTemplates][]" value="view"<?php if (isset($privilege['SmsTemplates']) && in_array('view', $privilege['SmsTemplates']) !== false): ?> checked<?php endif ?>>浏览</label>
+                            <label><input class="option" type="checkbox" name="auth[SmsTemplates][]" value="add"<?php if (isset($privilege['SmsTemplates']) && in_array('add', $privilege['SmsTemplates']) !== false): ?> checked<?php endif ?>>新增</label>
+                            <label><input class="option" type="checkbox" name="auth[SmsTemplates][]" value="edit"<?php if (isset($privilege['SmsTemplates']) && in_array('edit', $privilege['SmsTemplates']) !== false): ?> checked<?php endif ?>>编辑</label>
+                            <label><input class="option" type="checkbox" name="auth[SmsTemplates][]" value="delete"<?php if (isset($privilege['SmsTemplates']) && in_array('delete', $privilege['SmsTemplates']) !== false): ?> checked<?php endif ?>>删除</label>
+                            <label><input class="option" type="checkbox" name="auth[SmsTemplates][]" value="sms"<?php if (isset($privilege['SmsTemplates']) && in_array('sms', $privilege['SmsTemplates']) !== false): ?> checked<?php endif ?>>发送</label>
                         </div>
                     </div>
                 </td>
@@ -54,7 +54,7 @@
                 <td>
                     <div class="row">
                         <div class="col-xs-12">
-                            <label><input class="option" type="checkbox" name="auth[CustomerIncomes][]" value="v"<?php if (isset($privilege['CustomerIncomes']) && strpos($privilege['CustomerIncomes'], 'v') !== false): ?> checked<?php endif ?>>浏览</label>
+                            <label><input class="option" type="checkbox" name="auth[CustomerIncomes][]" value="view"<?php if (isset($privilege['CustomerIncomes']) && in_array('view', $privilege['CustomerIncomes']) !== false): ?> checked<?php endif ?>>浏览</label>
                         </div>
                     </div>
                 </td>
@@ -70,11 +70,11 @@
                     <td>
                         <div class="row">
                             <div class="col-xs-12">
-                                <label><input class="option" type="checkbox" name="auth[Customers_<?= $value->id ?>][]" value="v"<?php if (isset($privilege['Customers_' . $value->id]) && strpos($privilege['Customers_' . $value->id], 'v') !== false): ?> checked<?php endif ?>>浏览</label>
-                                <label><input class="option" type="checkbox" name="auth[Customers_<?= $value->id ?>][]" value="a"<?php if (isset($privilege['Customers_' . $value->id]) && strpos($privilege['Customers_' . $value->id], 'a') !== false): ?> checked<?php endif ?>>新增</label>
-                                <label><input class="option" type="checkbox" name="auth[Customers_<?= $value->id ?>][]" value="i"<?php if (isset($privilege['Customers_' . $value->id]) && strpos($privilege['Customers_' . $value->id], 'i') !== false): ?> checked<?php endif ?>>导入</label>
-                                <label><input class="option" type="checkbox" name="auth[Customers_<?= $value->id ?>][]" value="e"<?php if (isset($privilege['Customers_' . $value->id]) && strpos($privilege['Customers_' . $value->id], 'e') !== false): ?> checked<?php endif ?>>编辑</label>
-                                <label><input class="option" type="checkbox" name="auth[Customers_<?= $value->id ?>][]" value="d"<?php if (isset($privilege['Customers_' . $value->id]) && strpos($privilege['Customers_' . $value->id], 'd') !== false): ?> checked<?php endif ?>>删除</label>
+                                <label><input class="option" type="checkbox" name="auth[Customers_<?= $value->id ?>][]" value="view"<?php if (isset($privilege['Customers_' . $value->id]) && in_array('view', $privilege['Customers_' . $value->id]) !== false): ?> checked<?php endif ?>>浏览</label>
+                                <label><input class="option" type="checkbox" name="auth[Customers_<?= $value->id ?>][]" value="add"<?php if (isset($privilege['Customers_' . $value->id]) && in_array('add' ,$privilege['Customers_' . $value->id]) !== false): ?> checked<?php endif ?>>新增</label>
+                                <label><input class="option" type="checkbox" name="auth[Customers_<?= $value->id ?>][]" value="import"<?php if (isset($privilege['Customers_' . $value->id]) && in_array('import' ,$privilege['Customers_' . $value->id]) !== false): ?> checked<?php endif ?>>导入</label>
+                                <label><input class="option" type="checkbox" name="auth[Customers_<?= $value->id ?>][]" value="edit"<?php if (isset($privilege['Customers_' . $value->id]) && in_array('edit' ,$privilege['Customers_' . $value->id]) !== false): ?> checked<?php endif ?>>编辑</label>
+                                <label><input class="option" type="checkbox" name="auth[Customers_<?= $value->id ?>][]" value="delete"<?php if (isset($privilege['Customers_' . $value->id]) && in_array('delete' ,$privilege['Customers_' . $value->id]) !== false): ?> checked<?php endif ?>>删除</label>
                             </div>
                         </div>
                     </td>
@@ -88,10 +88,10 @@
                 <td>
                     <div class="row">
                         <div class="col-xs-12">
-                            <label><input class="option" type="checkbox" name="auth[FinancesTypes][]" value="v"<?php if (isset($privilege['FinancesTypes']) && strpos($privilege['FinancesTypes'], 'v') !== false): ?> checked<?php endif ?>>浏览</label>
-                            <label><input class="option" type="checkbox" name="auth[FinancesTypes][]" value="a"<?php if (isset($privilege['FinancesTypes']) && strpos($privilege['FinancesTypes'], 'a') !== false): ?> checked<?php endif ?>>新增</label>
-                            <label><input class="option" type="checkbox" name="auth[FinancesTypes][]" value="e"<?php if (isset($privilege['FinancesTypes']) && strpos($privilege['FinancesTypes'], 'e') !== false): ?> checked<?php endif ?>>编辑</label>
-                            <label><input class="option" type="checkbox" name="auth[FinancesTypes][]" value="d"<?php if (isset($privilege['FinancesTypes']) && strpos($privilege['FinancesTypes'], 'd') !== false): ?> checked<?php endif ?>>删除</label>
+                            <label><input class="option" type="checkbox" name="auth[FinancesTypes][]" value="view"<?php if (isset($privilege['FinancesTypes']) && in_array('view', $privilege['FinancesTypes']) !== false): ?> checked<?php endif ?>>浏览</label>
+                            <label><input class="option" type="checkbox" name="auth[FinancesTypes][]" value="add"<?php if (isset($privilege['FinancesTypes']) && in_array('add', $privilege['FinancesTypes']) !== false): ?> checked<?php endif ?>>新增</label>
+                            <label><input class="option" type="checkbox" name="auth[FinancesTypes][]" value="edit"<?php if (isset($privilege['FinancesTypes']) && in_array('edit', $privilege['FinancesTypes']) !== false): ?> checked<?php endif ?>>编辑</label>
+                            <label><input class="option" type="checkbox" name="auth[FinancesTypes][]" value="delete"<?php if (isset($privilege['FinancesTypes']) && in_array('delete', $privilege['FinancesTypes']) !== false): ?> checked<?php endif ?>>删除</label>
                         </div>
                     </div>
                 </td>
@@ -101,11 +101,11 @@
                 <td>
                     <div class="row">
                         <div class="col-xs-12">
-                            <label><input class="option" type="checkbox" name="auth[Finances][]" value="v"<?php if (isset($privilege['Finances']) && strpos($privilege['Finances'], 'v') !== false): ?> checked<?php endif ?>>浏览</label>
-                            <label><input class="option" type="checkbox" name="auth[Finances][]" value="a"<?php if (isset($privilege['Finances']) && strpos($privilege['Finances'], 'a') !== false): ?> checked<?php endif ?>>新增</label>
-                            <label><input class="option" type="checkbox" name="auth[Finances][]" value="e"<?php if (isset($privilege['Finances']) && strpos($privilege['Finances'], 'e') !== false): ?> checked<?php endif ?>>编辑</label>
-                            <label><input class="option" type="checkbox" name="auth[Finances][]" value="d"<?php if (isset($privilege['Finances']) && strpos($privilege['Finances'], 'd') !== false): ?> checked<?php endif ?>>删除</label>
-                            <label><input class="option" type="checkbox" name="auth[Finances][]" value="p"<?php if (isset($privilege['Finances']) && strpos($privilege['Finances'], 'p') !== false): ?> checked<?php endif ?>>申请</label>
+                            <label><input class="option" type="checkbox" name="auth[Finances][]" value="view"<?php if (isset($privilege['Finances']) && in_array('view', $privilege['Finances']) !== false): ?> checked<?php endif ?>>浏览</label>
+                            <label><input class="option" type="checkbox" name="auth[Finances][]" value="add"<?php if (isset($privilege['Finances']) && in_array('add', $privilege['Finances']) !== false): ?> checked<?php endif ?>>新增</label>
+                            <label><input class="option" type="checkbox" name="auth[Finances][]" value="edit"<?php if (isset($privilege['Finances']) && in_array('edit', $privilege['Finances']) !== false): ?> checked<?php endif ?>>编辑</label>
+                            <label><input class="option" type="checkbox" name="auth[Finances][]" value="delete"<?php if (isset($privilege['Finances']) && in_array('delete', $privilege['Finances']) !== false): ?> checked<?php endif ?>>删除</label>
+                            <label><input class="option" type="checkbox" name="auth[Finances][]" value="apply"<?php if (isset($privilege['Finances']) && in_array('apply', $privilege['Finances']) !== false): ?> checked<?php endif ?>>申请</label>
                         </div>
                     </div>
                 </td>
@@ -118,10 +118,10 @@
                 <td>
                     <div class="row">
                         <div class="col-xs-12">
-                            <label><input class="option" type="checkbox" name="auth[Projects][]" value="v"<?php if (isset($privilege['Projects']) && strpos($privilege['Projects'], 'v') !== false): ?> checked<?php endif ?>>浏览</label>
-                            <label><input class="option" type="checkbox" name="auth[Projects][]" value="a"<?php if (isset($privilege['Projects']) && strpos($privilege['Projects'], 'a') !== false): ?> checked<?php endif ?>>新增</label>
-                            <label><input class="option" type="checkbox" name="auth[Projects][]" value="e"<?php if (isset($privilege['Projects']) && strpos($privilege['Projects'], 'e') !== false): ?> checked<?php endif ?>>编辑</label>
-                            <label><input class="option" type="checkbox" name="auth[Projects][]" value="d"<?php if (isset($privilege['Projects']) && strpos($privilege['Projects'], 'd') !== false): ?> checked<?php endif ?>>删除</label>
+                            <label><input class="option" type="checkbox" name="auth[Projects][]" value="view"<?php if (isset($privilege['Projects']) && in_array('view', $privilege['Projects']) !== false): ?> checked<?php endif ?>>浏览</label>
+                            <label><input class="option" type="checkbox" name="auth[Projects][]" value="add"<?php if (isset($privilege['Projects']) && in_array('add', $privilege['Projects']) !== false): ?> checked<?php endif ?>>新增</label>
+                            <label><input class="option" type="checkbox" name="auth[Projects][]" value="edit"<?php if (isset($privilege['Projects']) && in_array('edit', $privilege['Projects']) !== false): ?> checked<?php endif ?>>编辑</label>
+                            <label><input class="option" type="checkbox" name="auth[Projects][]" value="delete"<?php if (isset($privilege['Projects']) && in_array('delete', $privilege['Projects']) !== false): ?> checked<?php endif ?>>删除</label>
                         </div>
                     </div>
                 </td>
@@ -131,11 +131,10 @@
                 <td>
                     <div class="row">
                         <div class="col-xs-12">
-                            <label><input class="option" type="checkbox" name="auth[ProjectSchedules][]" value="v"<?php if (isset($privilege['ProjectSchedules']) && strpos($privilege['ProjectSchedules'], 'v') !== false): ?> checked<?php endif ?>>浏览</label>
-                            <label><input class="option" type="checkbox" name="auth[ProjectSchedules][]" value="a"<?php if (isset($privilege['ProjectSchedules']) && strpos($privilege['ProjectSchedules'], 'a') !== false): ?> checked<?php endif ?>>新增</label>
-                            <label><input class="option" type="checkbox" name="auth[ProjectSchedules][]" value="e"<?php if (isset($privilege['ProjectSchedules']) && strpos($privilege['ProjectSchedules'], 'e') !== false): ?> checked<?php endif ?>>编辑</label>
-                            <label><input class="option" type="checkbox" name="auth[ProjectSchedules][]" value="d"<?php if (isset($privilege['ProjectSchedules']) && strpos($privilege['ProjectSchedules'], 'd') !== false): ?> checked<?php endif ?>>删除</label>
-                            <label><input class="option" type="checkbox" name="auth[ProjectSchedules][]" value="p"<?php if (isset($privilege['ProjectSchedules']) && strpos($privilege['ProjectSchedules'], 'p') !== false): ?> checked<?php endif ?>>申请</label>
+                            <label><input class="option" type="checkbox" name="auth[ProjectSchedules][]" value="view"<?php if (isset($privilege['ProjectSchedules']) && in_array('view', $privilege['ProjectSchedules']) !== false): ?> checked<?php endif ?>>浏览</label>
+                            <label><input class="option" type="checkbox" name="auth[ProjectSchedules][]" value="add"<?php if (isset($privilege['ProjectSchedules']) && in_array('add', $privilege['ProjectSchedules']) !== false): ?> checked<?php endif ?>>新增</label>
+                            <label><input class="option" type="checkbox" name="auth[ProjectSchedules][]" value="edit"<?php if (isset($privilege['ProjectSchedules']) && in_array('edit', $privilege['ProjectSchedules']) !== false): ?> checked<?php endif ?>>编辑</label>
+                            <label><input class="option" type="checkbox" name="auth[ProjectSchedules][]" value="delete"<?php if (isset($privilege['ProjectSchedules']) && in_array('delete', $privilege['ProjectSchedules']) !== false): ?> checked<?php endif ?>>删除</label>
                         </div>
                     </div>
                 </td>
@@ -148,10 +147,10 @@
                 <td>
                     <div class="row">
                         <div class="col-xs-12">
-                            <label><input class="option" type="checkbox" name="auth[Dropboxes][]" value="v"<?php if (isset($privilege['Dropboxes']) && strpos($privilege['Dropboxes'], 'v') !== false): ?> checked<?php endif ?>>浏览</label>
-                            <label><input class="option" type="checkbox" name="auth[Dropboxes][]" value="a"<?php if (isset($privilege['Dropboxes']) && strpos($privilege['Dropboxes'], 'a') !== false): ?> checked<?php endif ?>>新增</label>
-                            <label><input class="option" type="checkbox" name="auth[Dropboxes][]" value="e"<?php if (isset($privilege['Dropboxes']) && strpos($privilege['Dropboxes'], 'e') !== false): ?> checked<?php endif ?>>编辑</label>
-                            <label><input class="option" type="checkbox" name="auth[Dropboxes][]" value="d"<?php if (isset($privilege['Dropboxes']) && strpos($privilege['Dropboxes'], 'd') !== false): ?> checked<?php endif ?>>删除</label>
+                            <label><input class="option" type="checkbox" name="auth[Dropboxes][]" value="view"<?php if (isset($privilege['Dropboxes']) && in_array('view', $privilege['Dropboxes']) !== false): ?> checked<?php endif ?>>浏览</label>
+                            <label><input class="option" type="checkbox" name="auth[Dropboxes][]" value="add"<?php if (isset($privilege['Dropboxes']) && in_array('add', $privilege['Dropboxes']) !== false): ?> checked<?php endif ?>>新增</label>
+                            <label><input class="option" type="checkbox" name="auth[Dropboxes][]" value="edit"<?php if (isset($privilege['Dropboxes']) && in_array('edit', $privilege['Dropboxes']) !== false): ?> checked<?php endif ?>>编辑</label>
+                            <label><input class="option" type="checkbox" name="auth[Dropboxes][]" value="delete"<?php if (isset($privilege['Dropboxes']) && in_array('delete', $privilege['Dropboxes']) !== false): ?> checked<?php endif ?>>删除</label>
                         </div>
                     </div>
                 </td>
@@ -164,10 +163,10 @@
                 <td>
                     <div class="row">
                         <div class="col-xs-12">
-                            <label><input class="option" type="checkbox" name="auth[Departments][]" value="v"<?php if (isset($privilege['Departments']) && strpos($privilege['Departments'], 'v') !== false): ?> checked<?php endif ?>>浏览</label>
-                            <label><input class="option" type="checkbox" name="auth[Departments][]" value="a"<?php if (isset($privilege['Departments']) && strpos($privilege['Departments'], 'a') !== false): ?> checked<?php endif ?>>新增</label>
-                            <label><input class="option" type="checkbox" name="auth[Departments][]" value="e"<?php if (isset($privilege['Departments']) && strpos($privilege['Departments'], 'e') !== false): ?> checked<?php endif ?>>编辑</label>
-                            <label><input class="option" type="checkbox" name="auth[Departments][]" value="d"<?php if (isset($privilege['Departments']) && strpos($privilege['Departments'], 'd') !== false): ?> checked<?php endif ?>>删除</label>
+                            <label><input class="option" type="checkbox" name="auth[Departments][]" value="view"<?php if (isset($privilege['Departments']) && in_array('view', $privilege['Departments']) !== false): ?> checked<?php endif ?>>浏览</label>
+                            <label><input class="option" type="checkbox" name="auth[Departments][]" value="add"<?php if (isset($privilege['Departments']) && in_array('add', $privilege['Departments']) !== false): ?> checked<?php endif ?>>新增</label>
+                            <label><input class="option" type="checkbox" name="auth[Departments][]" value="edit"<?php if (isset($privilege['Departments']) && in_array('edit', $privilege['Departments']) !== false): ?> checked<?php endif ?>>编辑</label>
+                            <label><input class="option" type="checkbox" name="auth[Departments][]" value="delete"<?php if (isset($privilege['Departments']) && in_array('delete', $privilege['Departments']) !== false): ?> checked<?php endif ?>>删除</label>
                         </div>
                     </div>
                 </td>
@@ -177,10 +176,10 @@
                 <td>
                     <div class="row">
                         <div class="col-xs-12">
-                            <label><input class="option" type="checkbox" name="auth[Users][]" value="v"<?php if (isset($privilege['Users']) && strpos($privilege['Users'], 'v') !== false): ?> checked<?php endif ?>>浏览</label>
-                            <label><input class="option" type="checkbox" name="auth[Users][]" value="a"<?php if (isset($privilege['Users']) && strpos($privilege['Users'], 'a') !== false): ?> checked<?php endif ?>>新增</label>
-                            <label><input class="option" type="checkbox" name="auth[Users][]" value="e"<?php if (isset($privilege['Users']) && strpos($privilege['Users'], 'e') !== false): ?> checked<?php endif ?>>编辑</label>
-                            <label><input class="option" type="checkbox" name="auth[Users][]" value="d"<?php if (isset($privilege['Users']) && strpos($privilege['Users'], 'd') !== false): ?> checked<?php endif ?>>删除</label>
+                            <label><input class="option" type="checkbox" name="auth[Users][]" value="view"<?php if (isset($privilege['Users']) && in_array('view', $privilege['Users']) !== false): ?> checked<?php endif ?>>浏览</label>
+                            <label><input class="option" type="checkbox" name="auth[Users][]" value="add"<?php if (isset($privilege['Users']) && in_array('add', $privilege['Users']) !== false): ?> checked<?php endif ?>>新增</label>
+                            <label><input class="option" type="checkbox" name="auth[Users][]" value="edit"<?php if (isset($privilege['Users']) && in_array('edit', $privilege['Users']) !== false): ?> checked<?php endif ?>>编辑</label>
+                            <label><input class="option" type="checkbox" name="auth[Users][]" value="delete"<?php if (isset($privilege['Users']) && in_array('delete', $privilege['Users']) !== false): ?> checked<?php endif ?>>删除</label>
                         </div>
                     </div>
                 </td>
@@ -190,10 +189,10 @@
                 <td>
                     <div class="row">
                         <div class="col-xs-12">
-                            <label><input class="option" type="checkbox" name="auth[Privileges][]" value="v"<?php if (isset($privilege['Privileges']) && strpos($privilege['Privileges'], 'v') !== false): ?> checked<?php endif ?>>浏览</label>
-                            <label><input class="option" type="checkbox" name="auth[Privileges][]" value="a"<?php if (isset($privilege['Privileges']) && strpos($privilege['Privileges'], 'a') !== false): ?> checked<?php endif ?>>新增</label>
-                            <label><input class="option" type="checkbox" name="auth[Privileges][]" value="e"<?php if (isset($privilege['Privileges']) && strpos($privilege['Privileges'], 'd') !== false): ?> checked<?php endif ?>>编辑</label>
-                            <label><input class="option" type="checkbox" name="auth[Privileges][]" value="d"<?php if (isset($privilege['Privileges']) && strpos($privilege['Privileges'], 'e') !== false): ?> checked<?php endif ?>>删除</label>
+                            <label><input class="option" type="checkbox" name="auth[Privileges][]" value="view"<?php if (isset($privilege['Privileges']) && in_array('view', $privilege['Privileges']) !== false): ?> checked<?php endif ?>>浏览</label>
+                            <label><input class="option" type="checkbox" name="auth[Privileges][]" value="add"<?php if (isset($privilege['Privileges']) && in_array('add', $privilege['Privileges']) !== false): ?> checked<?php endif ?>>新增</label>
+                            <label><input class="option" type="checkbox" name="auth[Privileges][]" value="edit"<?php if (isset($privilege['Privileges']) && in_array('edit', $privilege['Privileges']) !== false): ?> checked<?php endif ?>>编辑</label>
+                            <label><input class="option" type="checkbox" name="auth[Privileges][]" value="delete"<?php if (isset($privilege['Privileges']) && in_array('delete', $privilege['Privileges']) !== false): ?> checked<?php endif ?>>删除</label>
                         </div>
                     </div>
                 </td>
@@ -203,10 +202,10 @@
                 <td>
                     <div class="row">
                         <div class="col-xs-12">
-                            <label><input class="option" type="checkbox" name="auth[Holidays][]" value="v"<?php if (isset($privilege['Holidays']) && strpos($privilege['Holidays'], 'v') !== false): ?> checked<?php endif ?>>浏览</label>
-                            <label><input class="option" type="checkbox" name="auth[Holidays][]" value="a"<?php if (isset($privilege['Holidays']) && strpos($privilege['Holidays'], 'a') !== false): ?> checked<?php endif ?>>新增</label>
-                            <label><input class="option" type="checkbox" name="auth[Holidays][]" value="e"<?php if (isset($privilege['Holidays']) && strpos($privilege['Holidays'], 'e') !== false): ?> checked<?php endif ?>>编辑</label>
-                            <label><input class="option" type="checkbox" name="auth[Holidays][]" value="d"<?php if (isset($privilege['Holidays']) && strpos($privilege['Holidays'], 'd') !== false): ?> checked<?php endif ?>>删除</label>
+                            <label><input class="option" type="checkbox" name="auth[Holidays][]" value="view"<?php if (isset($privilege['Holidays']) && in_array('view', $privilege['Holidays']) !== false): ?> checked<?php endif ?>>浏览</label>
+                            <label><input class="option" type="checkbox" name="auth[Holidays][]" value="add"<?php if (isset($privilege['Holidays']) && in_array('add', $privilege['Holidays']) !== false): ?> checked<?php endif ?>>新增</label>
+                            <label><input class="option" type="checkbox" name="auth[Holidays][]" value="edit"<?php if (isset($privilege['Holidays']) && in_array('edit', $privilege['Holidays']) !== false): ?> checked<?php endif ?>>编辑</label>
+                            <label><input class="option" type="checkbox" name="auth[Holidays][]" value="delete"<?php if (isset($privilege['Holidays']) && in_array('delete', $privilege['Holidays']) !== false): ?> checked<?php endif ?>>删除</label>
                         </div>
                     </div>
                 </td>
